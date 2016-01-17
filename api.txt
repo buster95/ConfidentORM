@@ -1,0 +1,10 @@
+Gracias Por Usar este Framework
+
+Aun no tiene Nombre pero Pronto lo tendra
+
+para iniciar tenemos que importar la clase MyDB
+require_once 'MyDB.php';
+
+ahora ya podemos iniciar a trabajar
+con el siguiente codigo indicaremos el nombre de la tabla
+MyDB::tabla('nombre_tabla');

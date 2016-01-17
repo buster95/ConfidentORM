@@ -5,18 +5,22 @@ require_once 'Table.php';
 */
 class MyDB{
 	// VARIABLES DE CONFIGURACION
-	private $user='root';
-	private $password='';
-	private $database='prueba';
-	private $host='127.0.0.1';
-	private $port='3306';
-	// VARIABLES DE CONFIGURACION
+	private $user='root'; // Usuario de la BASE DE DATOS
+	private $password=''; // Password del usuario de la BASE DE DATOS
+	private $database='prueba'; // nombre de la BASE DE DATOS
+	private $host='127.0.0.1'; // IPv4 o host de conexion
+	private $port='3306'; // puerto de conexion
 
 	public static function tabla($nombre_tabla) {
 		$tabla = new Table($nombre_tabla);
 		return $tabla;
 	}
 
+	/**
+	 * [Function] db_key
+	 * @param  String Nombre de la Tabla
+	 * @return String PrimaryKey Tabla
+	 */
 	public function db_key($table_name){
 		$consulta="SELECT t2.`COLUMN_NAME` as columna
 		FROM `information_schema`.`TABLE_CONSTRAINTS` t1
@@ -25,11 +29,14 @@ class MyDB{
 		WHERE t1.`CONSTRAINT_TYPE` = 'PRIMARY KEY'
 		AND t1.`TABLE_SCHEMA` = '".$this->database."'
 		AND t1.`TABLE_NAME` = '".$table_name."'";
-		$resultados = self::consultar($consulta);
+		$resultados = $this->consultar($consulta);
 		$fila = $resultados->fetch_object();
 		return $fila->columna;
 	}
 
+	/**
+	 * @return mysqli_connect Conexion MySQL
+	 */
 	public function conectar() {
 		$con = new mysqli($this->getHOST(), $this->user, $this->password, $this->database);
 		if($con->connect_error){
@@ -39,14 +46,13 @@ class MyDB{
 		}
 	}
 
-	public static function consultar($consulta){
-		$clase = new MyDB();
-		$conx = $clase->conectar();
+	public function consultar($consulta){
+		$conx = $this->conectar();
 		$resultado = $conx->query($consulta);
 		return $resultado;
 	}
 
-	public static function jsonrow($fila){
+	public function jsonrow($fila){
 		foreach ($fila as $key => $valor) {
 			if(is_string($valor)){
 				$acentos = array('é','í','ó','ú','á','ñ');
@@ -66,7 +72,7 @@ class MyDB{
 		}
 	}
 
-	public static function jsondata($resultados){
+	public function jsondata($resultados){
 		$filas = array();
 
 		while ($row = $resultados->fetch_array(MYSQLI_ASSOC)){
@@ -92,7 +98,7 @@ class MyDB{
 		}
 	}
 
-	public static function listar($resultados)	{
+	public function listar($resultados)	{
 		$datos = array();
 		while ($fila = $resultados->fetch_object()) {
 			$datos[] = $fila;
