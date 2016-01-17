@@ -6,6 +6,7 @@ class Table {
 	// PARAMETROS DE LA TABLA
 	private $tabla='';
 	private $select='*';
+	private $primary_key='';
 	private $where='';
 	private $inner='';
 	private $order='';
@@ -68,6 +69,42 @@ class Table {
 	}
 
 	public function group(){
+	}
+
+	public function find($id){
+		if(is_numeric($id)){
+			$consulta = "select * from ".$this->tabla." where ".$this->key()."=".$id;
+			$resultado = MyDB::consultar($consulta);
+			return $resultado->fetch_object();
+		}else{
+			return '';
+		}
+	}
+
+	public function findJSON($id){
+		if(is_numeric($id)){
+			$consulta = "select * from ".$this->tabla." where ".$this->key()."=".$id;
+			$resultado = MyDB::consultar($consulta);
+			$json = MyDB::jsonrow($resultado->fetch_object());
+			return $json;
+		}else{
+			return '';
+		}
+	}
+
+	public function findSQL($id){
+		if(is_numeric($id)){
+			$consulta = "select * from ".$this->tabla." where ".$this->key()."=".$id;
+			return $consulta;
+		}else{
+			return '';
+		}
+	}
+
+	public function key(){
+		$db = new MyDB();
+		$columna = $db->db_key($this->tabla);
+		return $columna;
 	}
 
 	public function getSQL(){

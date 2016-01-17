@@ -17,6 +17,19 @@ class MyDB{
 		return $tabla;
 	}
 
+	public function db_key($table_name){
+		$consulta="SELECT t2.`COLUMN_NAME` as columna
+		FROM `information_schema`.`TABLE_CONSTRAINTS` t1
+		JOIN `information_schema`.`KEY_COLUMN_USAGE` t2
+		USING (`CONSTRAINT_NAME`, `TABLE_SCHEMA`, `TABLE_NAME`)
+		WHERE t1.`CONSTRAINT_TYPE` = 'PRIMARY KEY'
+		AND t1.`TABLE_SCHEMA` = '".$this->database."'
+		AND t1.`TABLE_NAME` = '".$table_name."'";
+		$resultados = MyDB::consultar($consulta);
+		$fila = $resultados->fetch_object();
+		return $fila->columna;
+	}
+
 	public function conectar() {
 		$con = new mysqli($this->getHOST(), $this->user, $this->password, $this->database);
 		if($con->connect_error){
