@@ -25,7 +25,7 @@ class MyDB{
 		WHERE t1.`CONSTRAINT_TYPE` = 'PRIMARY KEY'
 		AND t1.`TABLE_SCHEMA` = '".$this->database."'
 		AND t1.`TABLE_NAME` = '".$table_name."'";
-		$resultados = MyDB::consultar($consulta);
+		$resultados = self::consultar($consulta);
 		$fila = $resultados->fetch_object();
 		return $fila->columna;
 	}

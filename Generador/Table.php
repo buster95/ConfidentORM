@@ -19,6 +19,12 @@ class Table {
 		return $this;
 	}
 
+	public function key(){
+		$db = new MyDB();
+		$columna = $db->db_key($this->tabla);
+		return $columna;
+	}
+
 	public function select($parametros1) {
 		$this->select = $parametros1;
 		return $this;
@@ -99,12 +105,6 @@ class Table {
 		}else{
 			return '';
 		}
-	}
-
-	public function key(){
-		$db = new MyDB();
-		$columna = $db->db_key($this->tabla);
-		return $columna;
 	}
 
 	public function getSQL(){
