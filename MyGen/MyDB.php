@@ -12,6 +12,11 @@ class MyDB{
 	private $port='3306';
 	// VARIABLES DE CONFIGURACION
 
+	public static function tabla($nombre_tabla) {
+		$tabla = new Table($nombre_tabla);
+		return $tabla;
+	}
+
 	public function conectar() {
 		$con = new mysqli($this->getHOST(), $this->user, $this->password, $this->database);
 		if($con->connect_error){
@@ -50,6 +55,7 @@ class MyDB{
 
 	public static function jsondata($resultados){
 		$filas = array();
+
 		while ($row = $resultados->fetch_array(MYSQLI_ASSOC)){
 			foreach ($row as $key => $valor) {
 				if(is_string($valor)){
@@ -73,17 +79,20 @@ class MyDB{
 		}
 	}
 
-	public function getHOST(){
+	public static function listar($resultados)	{
+		$datos = array();
+		while ($fila = $resultados->fetch_object()) {
+			$datos[] = $fila;
+		}
+		return $datos;
+	}
+
+	private function getHOST(){
 		if($this->port==''){
 			return $this->host;
 		}else{
 			return $this->host.':'.$this->port;
 		}
-	}
-
-	public static function tabla($nombre_tabla) {
-		$tabla = new Table($nombre_tabla);
-		return $tabla;
 	}
 }
 

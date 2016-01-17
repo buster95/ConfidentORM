@@ -38,18 +38,22 @@ class Table {
 	public function getSQL(){
 		$consulta = "select ".$this->parametros." from ".$this->tabla;
 		return $consulta;
-
 	}
 
 	public function get(){
-		$resultado = MyDB::consultar($this->getSQL());
-		return $resultado;
+		$resultados = MyDB::consultar($this->getSQL());
+		$lista = MyDB::listar($resultados);
+		return $lista;
 	}
 
 	public function getJSON(){
+		$resultados = MyDB::consultar($this->getSQL());
+		return MyDB::jsondata($resultados);
 	}
 
 	public function getJSONROW(){
+		$resultados = MyDB::consultar($this->getSQL());
+		return MyDB::jsonrow($resultados->fetch_object());
 	}
 }
 

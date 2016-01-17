@@ -10,5 +10,6 @@ create table usuarios (
     clave varchar(100),
     fecha date
 );
-insert into usuarios(nombre, apellido, usuario, clave, fecha)
-values('Walter Ramon','Corrales Diaz','walter2015','123456',current_date());
+insert into usuarios(nombre, apellido, usuario, clave, fecha) values
+('Walter Ramon','Corrales Diaz','walter2015','123456',current_date()),
+('Andrea Carolina','Morazan Carvajal','andrea2015','123456',current_date());
