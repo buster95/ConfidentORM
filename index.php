@@ -1,8 +1,8 @@
 <?php
 
-require_once 'MyGen/MyDB.php';
+require_once 'Generador/MyDB.php';
 
-echo MyDB::tabla('usuarios')->select('nombre, apellido')->getSQL();
+echo MyDB::tabla('usuarios')->where('usuario','walter2015')->where('id_usuario',2)->getSQL();
 
 echo "<br>";
 echo "<br>";
