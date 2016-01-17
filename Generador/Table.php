@@ -36,6 +36,10 @@ class Table {
 	public function columnas(){
 	}
 
+
+
+
+
 	public function select($parametros1) {
 		$this->select = $parametros1;
 		return $this;
@@ -134,19 +138,74 @@ class Table {
 		return $this;
 	}
 
+
+
+
+
+	/**
+	 * AUMENTAR UN PARAMETRO NUMERICO
+	 * @param  String $parametro NombreDelAtributo
+	 * @return Boolean true or false
+	 */
 	public function aumentar($parametro){
 	}
 
-	public function disminuir($parametro){
-	}
-
+	/**
+	 * DISMINUIR UN PARAMETRO NUMERICO
+	 * @param  String $parametro NombreDelParametro
+	 * @return Boolean	true or false
+	 */
 	public function disminuir($parametro){
 	}
 
 	/**
-	 * Busqueda Por ID Primary Key
+	 * MAXIMO VALOR DE UN ATRIBUTO NUMERICO
+	 * @param  String $parametro NombreDelAtributo
+	 * @return Int ValorMaximo
+	 */
+	public function max($parametro){
+	}
+
+	/**
+	 * VALOR MINIMO DE UN ATRIBUTO NUMERICO
+	 * @param  String $parametro NombreDelAtributo
+	 * @return Int ValorMinimo
+	 */
+	public function min($parametro){
+	}
+
+	/**
+	 * VALOR PROMEDIO DE UN ATRIBUTO NUMERICO
+	 * @param  String $parametro NombreDelAtributo
+	 * @return Int ValorPromedio
+	 */
+	public function avg($parametro){
+	}
+
+	/**
+	 * SUMATORIA DE UN ATRIBUTO NUMERICO
+	 * @param  String $parametro NombreDelAtributo
+	 * @return Int ValorSumatoria
+	 */
+	public function sum($parametro){
+	}
+
+	/**
+	 * CANTIDAD DE VALORES REGISTRADOS
+	 * @return Int CantidadDeValores
+	 */
+	public function count(){
+	}
+
+
+
+
+
+
+	/**
+	 * BUSQUEDA POR ID PRIMARY KEY
 	 * @param  Int $id Primary Key a Buscar
-	 * @return Object Registro Obtenido
+	 * @return Object RegistroObtenido
 	 */
 	public function find($id){
 		if(is_numeric($id)){
@@ -158,6 +217,11 @@ class Table {
 		}
 	}
 
+	/**
+	 * OBTENER LA CONSULTA DE UNA BUSQUEDA POR ID
+	 * @param  Int $id ID_REGISTRO
+	 * @return String ConsultaDeObtencion
+	 */
 	public function findSQL($id){
 		if(is_numeric($id)){
 			$consulta = "select * from ".$this->tabla." where ".$this->key()."=".$id;
@@ -167,6 +231,11 @@ class Table {
 		}
 	}
 
+	/**
+	 * OBTENER UN REGISTRO EN FORMATO JSON
+	 * @param  Int $id ID_REGISTRO
+	 * @return String REGISTRO_JSON
+	 */
 	public function findJSON($id){
 		if(is_numeric($id)){
 			$consulta = "select * from ".$this->tabla." where ".$this->key()."=".$id;
@@ -177,6 +246,13 @@ class Table {
 			return '';
 		}
 	}
+
+
+
+
+
+
+
 
 	public function getSQL(){
 		$consulta = "SELECT ".$this->select." FROM ".$this->tabla;
@@ -215,6 +291,11 @@ class Table {
 		$resultados = $this->mydb->consultar($this->getSQL());
 		return $this->mydb->jsonrow($resultados->fetch_object());
 	}
+
+
+
+
+
 
 
 

@@ -1,7 +1,8 @@
-drop database if exists prueba;
-create database prueba;
-use prueba;
+drop database if exists prueba; ## ELiminar Base de Datos si Existe
+create database prueba; ## Crea Base de Datos
+use prueba; ## Seleccion la Base de Datos
 
+## Creamos Tabla Usuarios
 create table usuarios (
 	id_usuario int not null primary key auto_increment,
 	nombre varchar(100),
@@ -14,6 +15,7 @@ insert into usuarios(nombre, apellido, usuario, clave, fecha) values
 ('Walter Ramon','Corrales Diaz','walter2015','123456',current_date()),
 ('Andrea Carolina','Morazan Carvajal','andrea2015','123456',current_date());
 
+## Creamos Tabla Estudiantes
 create table estudiantes(
 	id_estudiante int not null primary key auto_increment,
     nombre varchar(100) not null,
