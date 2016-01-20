@@ -2,19 +2,28 @@
 
 require_once 'Generador/MyDB.php';
 
-// echo MyDB::tabla('usuarios')->select('usuario, apellido')->where('usuario','walter2015')->whereOr('nombre','walter')->getSQL();
-// echo "<br>";
-// echo "<br>";
-// $usuarios = MyDB::tabla('usuarios')->select('nombre, apellido')->get();
-// foreach ($usuarios as $user) {
-// 	echo $user->nombre.' '.$user->apellido;
-// 	echo "<br>";
-// }
+echo MyDB::table('estudiantes')
+->where('id_estudiante',2)
+->getJSON();
 
-// var_dump(MyDB::tabla('usuarios')->find(2));
-// var_dump(MyDB::tabla('estudiantes')->find(1));
-// var_dump(MyDB::tabla('estudiantes')->find(2));
+echo "<br>";
 
-echo MyDB::tabla('usuarios')->order('id_usuario')->order('nombre')->group('id_usuario')->limit(10)->getSQL();
+echo MyDB::table('usuarios')
+->select('id_usuario,nombre,apellido,usuario')
+->findJSON(1);
 
+echo "<br>";
+echo "<br>";
+
+// $usuario->nombre='Walter Ramon';
+// $usuario->apellido='Corrales Diaz';
+// $usuario->fecha='current_date()';
+// $usuario->estado='1';
+
+$usuario1['nombre']='Walter Ramon';
+$usuario1['apellido']='Corrales Diaz';
+$usuario1['fecha']='current_date()';
+$usuario1['estado']='1';
+
+echo MyDB::table('usuarios')->save($usuario1);
 ?>

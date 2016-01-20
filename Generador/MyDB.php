@@ -5,13 +5,13 @@ require_once 'Table.php';
 */
 class MyDB{
 	// VARIABLES DE CONFIGURACION
-	private $user='root'; // Usuario de la BASE DE DATOS
-	private $password=''; // Password del usuario de la BASE DE DATOS
-	private $database='prueba'; // nombre de la BASE DE DATOS
-	private $host='127.0.0.1'; // IPv4 o host de conexion
-	private $port='3306'; // puerto de conexion
+	private $user='root'; // USUARIO de la BASE DE DATOS
+	private $password=''; // PASSWORD del usuario de la BASE DE DATOS
+	private $database='prueba'; // BASE DE DATOS
+	private $host='127.0.0.1'; // IPv4 o HOST de conexion
+	private $port='3306'; // puerto de conexion DEFAULT:3306
 
-	public static function tabla($nombre_tabla) {
+	public static function table($nombre_tabla) {
 		$tabla = new Table($nombre_tabla);
 		return $tabla;
 	}
@@ -22,7 +22,7 @@ class MyDB{
 	 * @return String PrimaryKey Tabla
 	 */
 	public function db_key($table_name){
-		$consulta="SELECT t2.`COLUMN_NAME` as columna
+		$consulta="SELECT t2.`COLUMN_NAME` as llave
 		FROM `information_schema`.`TABLE_CONSTRAINTS` t1
 		JOIN `information_schema`.`KEY_COLUMN_USAGE` t2
 		USING (`CONSTRAINT_NAME`, `TABLE_SCHEMA`, `TABLE_NAME`)
@@ -31,7 +31,7 @@ class MyDB{
 		AND t1.`TABLE_NAME` = '".$table_name."'";
 		$resultados = $this->consultar($consulta);
 		$fila = $resultados->fetch_object();
-		return $fila->columna;
+		return $fila->llave;
 	}
 
 	/**
