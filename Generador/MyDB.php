@@ -15,25 +15,6 @@ class MyDB{
 		$tabla = new Table($nombre_tabla);
 		return $tabla;
 	}
-
-	/**
-	 * [Function] db_key
-	 * @param  String Nombre de la Tabla
-	 * @return String PrimaryKey Tabla
-	 */
-	public function db_key($table_name){
-		$consulta="SELECT t2.`COLUMN_NAME` as llave
-		FROM `information_schema`.`TABLE_CONSTRAINTS` t1
-		JOIN `information_schema`.`KEY_COLUMN_USAGE` t2
-		USING (`CONSTRAINT_NAME`, `TABLE_SCHEMA`, `TABLE_NAME`)
-		WHERE t1.`CONSTRAINT_TYPE` = 'PRIMARY KEY'
-		AND t1.`TABLE_SCHEMA` = '".$this->database."'
-		AND t1.`TABLE_NAME` = '".$table_name."'";
-		$resultados = $this->consultar($consulta);
-		$fila = $resultados->fetch_object();
-		return $fila->llave;
-	}
-
 	/**
 	 * @return mysqli_connect Conexion MySQL
 	 */
@@ -50,6 +31,12 @@ class MyDB{
 		$conx = $this->conectar();
 		$resultado = $conx->query($consulta);
 		return $resultado;
+	}
+
+	public function ejecutar($consultar){
+		$conx = $this->conectar();
+		$conx->query($consulta);
+		return $conx->affected_rows;
 	}
 
 	public function jsonrow($fila){

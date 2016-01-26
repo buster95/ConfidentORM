@@ -18,60 +18,188 @@ class Table {
 	private $on='';
 
 	private $mydb;
-	private $consulta='';
 
 	public static $DESC='DESC';
 	public static $ASC='ASC';
 
 	/**
-	 * [Constructor de instancia]
+	 * CONSTRUCTOR DE LA CLASE
 	 * @param String $nombre1 Nombre De La Tabla en la DataBase
 	 */
 	function __construct($nombre1) {
-		$this->tabla = $nombre1;
+		$this->tabla = strtoupper($nombre1);
 		$this->mydb = new MyDB();
 		return $this;
 	}
-
-	public function key(){
-		$llave = $this->mydb->db_key($this->tabla);
-		return $llave;
+	/**
+	 * LLAVE PRIMARIA DE LA TABLA
+	 * @return String LLAVE PRIMARIA
+	 */
+	public function KEY(){
+		$llaves = $this->mydb->consultar('SHOW KEYS FROM '.$this->tabla);
+		while ($fila = $llaves->fetch_object()) {
+			if($fila->Key_name=='PRIMARY'){
+				return $fila->Column_name;
+			}
+		}
+		return '';
 	}
-
-	public function columnas(){
-	}
-
-	private function describe(){
-		$consulta = "describe";
-	}
-
-	private function Exist(){
-
+	/**
+	 * COLUMNAS
+	 * @return String CAMPOS DE LA TABLA
+	 */
+	public function COLUMNAS(){
+		$columnas = $this->mydb->consultar('DESCRIBE '.$this->tabla);
+		$campos = array();
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			$campos[] = $fila['Field'];
+		}
+		return $campos;
 	}
 
 	/**
-	 * ADD TABLENAME A CADA PARAMETRO
+	 * INFORMACION CAMPOS TABLA
+	 * @return Array Informacion Campos
+	 */
+	public function DESCRIBE(){
+		$columnas = $this->mydb->consultar('DESCRIBE '.$this->tabla);
+		$campos = array();
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			$campos[] = $fila;
+		}
+		return $campos;
+	}
+
+	/**
+	 * QUITA CARACTERES ESPECIALES DE UNA CADENA
+	 * @param  String $cadena CADENA A LIMPIAR
+	 * @return String         CADENA LIMPIADA
+	 */
+	private function SQL_CLEAN_PARAMS($cadena)	{
+		$caracteres = array('\'','"','=','!',
+			'<','>','¿','?','¡','$','\\','{',
+			'}','[',']','#','&','(',')',
+			'+','-',' ');
+		$filtrada = str_replace($caracteres, '', $cadena);
+		$filtrada = str_replace(array('%','*'), '%', $cadena);
+		return $filtrada;
+	}
+	/**
+	 * LIMPIA UN PARAMETRO DE FUNCIONES Y CARACTERES
+	 * @param  String $string1 PARAMETRO A VERIFICAR
+	 * @return String          PARAMETRO LIMPIADO
+	 */
+	private function SELECT_CLEAN_PARAMS($string1){
+		$verificador = strtolower($string1);
+		$verificador = str_replace(array('concat(','sum(','avg(','count(','max(','min(','(',')',' '), '', $verificador);
+		$verificador = str_replace(array('+','-','*','/'), ',', $verificador);
+		return $verificador;
+	}
+
+	public function COLUMNS_EXISTS($columnas){
+		if($columnas==''){ return true; }
+
+		if(is_string($columnas)){
+			$columnas = $this->SELECT_CLEAN_PARAMS($columnas);
+		}
+		if(strpos($columnas,',')>-1){
+			$columnas = explode(',', $columnas);
+		}
+		if(is_array($columnas)){
+			foreach ($columnas as $valor) {
+				$this->COLUMN_EXISTS($valor);
+			}
+			return true;
+		}
+	}
+	/**
+	 * COMPRUEBA SI EL NOMBRE DE UNA COLUMNA EXISTE
+	 * @param  String $column_name NombreDeLaColumna
+	 * @return Boolean     TRUE (if exist) or FALSE (if not exist)
+	 */
+	public function COLUMN_EXISTS($columna=''){
+		$column_name = $columna;
+		if($column_name==''){ return true; }
+
+		if(is_string($column_name)){
+			$column_name = $this->SELECT_CLEAN_PARAMS($column_name);
+		}
+
+		if (strpos($column_name, '\'')===0) {
+			$is_a_text = $column_name;
+			$contador = 0;
+			for ($i=0; $i < strlen($column_name); $i++) {
+				if (strpos($is_a_text, '\'')>-1) {
+					$posicion = strpos($is_a_text, '\'');
+					$is_a_text = substr($is_a_text, $posicion+1);
+					$contador++;
+				}
+			}
+			if(is_numeric($contador) && $contador>0 && $contador%2==0){
+				return true;
+			}else {
+				throw new Exception("SQL QUERY CON => ( ".$column_name." ) APOSTROFE DE MAS", 2);
+			}
+
+		}else if (strpos($column_name, '\'') > 0) {
+			throw new Exception("NO ES UN NOMBRE => ( ".$column_name." ) PARA UNA COLUMNA", 3);
+		}
+
+		$columnas = $this->mydb->consultar('DESCRIBE '.$this->tabla);
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			if(strtolower($fila['Field']) == strtolower($column_name)){
+				return true;
+			}
+		}
+		throw new Exception("COLUMNA => ( ".$column_name." ) NO EXISTE", 1);
+	}
+
+	/**
+	 * AGREGA TABLENAME A CADA PARAMETRO
 	 * @param  String $string1 Parametro de Entrada
 	 * @return String          Parametro Filtrado
 	 */
 	private function selectReplace($string1){
 		$string1 = strtolower($string1);
 		$string1 = strtoupper($this->tabla).'.'.$string1;
-		$string1 = str_replace('(', '('.strtoupper($this->tabla).'.', $string1);
-		$string1 = str_replace(',', ','.strtoupper($this->tabla).'.', $string1);
-		$string1 = str_replace('+', '+'.strtoupper($this->tabla).'.', $string1);
-		$string1 = str_replace('-', '-'.strtoupper($this->tabla).'.', $string1);
-		$string1 = str_replace('*', '*'.strtoupper($this->tabla).'.', $string1);
-		$string1 = str_replace('/', '/'.strtoupper($this->tabla).'.', $string1);
+		$string1 = str_replace('(', '('.$this->tabla.'.', $string1);
+		$string1 = str_replace(',', ','.$this->tabla.'.', $string1);
+		$string1 = str_replace('+', '+'.$this->tabla.'.', $string1);
+		$string1 = str_replace('-', '-'.$this->tabla.'.', $string1);
+		$string1 = str_replace('*', '*'.$this->tabla.'.', $string1);
+		$string1 = str_replace('/', '/'.$this->tabla.'.', $string1);
 
-		$string1 = str_replace(strtoupper($this->tabla).'.sum(', 'sum(', $string1);
-		$string1 = str_replace(strtoupper($this->tabla).'.avg(', 'avg(', $string1);
-		$string1 = str_replace(strtoupper($this->tabla).'.min(', 'min(', $string1);
-		$string1 = str_replace(strtoupper($this->tabla).'.max(', 'max(', $string1);
-		$string1 = str_replace(strtoupper($this->tabla).'.count(', 'count(', $string1);
+		$string1 = str_replace(array(' ,',', '), ',', $string1);
+		$string1 = str_replace($this->tabla.'.\'', '\'', $string1);
+		$string1 = str_replace($this->tabla.'.sum(', 'SUM(', $string1);
+		$string1 = str_replace($this->tabla.'.avg(', 'AVG(', $string1);
+		$string1 = str_replace($this->tabla.'.min(', 'MIN(', $string1);
+		$string1 = str_replace($this->tabla.'.min(', 'MIN(', $string1);
+		$string1 = str_replace($this->tabla.'.concat(', 'CONCAT(', $string1);
+		$string1 = str_replace($this->tabla.'.count(', 'COUNT(', $string1);
 		return $string1;
 	}
+	/**
+	 * SELECT CLAUSE EN EL SQL QUERY
+	 * @param  String $parametro1 NOMBRE DEL PARAMETRO A SELECCIONAR
+	 * @return Table             RETURN CURRENT CLASS
+	 */
 	public function select($parametro1) {
+		if(is_string($parametro1)){
+			$this->COLUMNS_EXISTS($parametro1);
+		}else{
+			return $this;
+		}
+
+		if ((strpos($parametro1,'(')>-1 &&
+				!strpos($parametro1,')')>-1) ||
+			(!strpos($parametro1,'(')>-1 &&
+				strpos($parametro1,')')>-1) ||
+			(strpos($parametro1,'(')>strpos($parametro1,')')) ||
+			(strpos($parametro1,'(')==false && strpos($parametro1,')')>-1)) {
+			throw new Exception("NO ES UN NOMBRE => ( ".$parametro1." ) PARA UNA COLUMNA", 3);
+		}
+
 		if($this->select=='*'){
 			if(is_string($parametro1)){
 				$parametro1 = $this->selectReplace($parametro1);
@@ -83,15 +211,24 @@ class Table {
 				$this->select .= ','.$parametro1;
 			}
 		}
-
-		if(is_array($parametro1)){
-			foreach ($parametro1 as $valor) {
-				$this->select($valor);
-			}
-		}
 		return $this;
 	}
 	public function selectAs($parametro1, $asname){
+		if(is_string($parametro1)){
+			$this->COLUMNS_EXISTS($parametro1);
+		}else{
+			return $this;
+		}
+
+		if ((strpos($parametro1,'(')>-1 &&
+				!strpos($parametro1,')')>-1) ||
+			(!strpos($parametro1,'(')>-1 &&
+				strpos($parametro1,')')>-1) ||
+			(strpos($parametro1,'(')>strpos($parametro1,')')) ||
+			(strpos($parametro1,'(')==false && strpos($parametro1,')')>-1)) {
+			throw new Exception("NO ES UN NOMBRE => ( ".$parametro1." ) PARA UNA COLUMNA", 3);
+		}
+
 		if ($this->select=='*') {
 			if(is_string($parametro1) && is_string($asname)){
 				$parametro1 = $this->selectReplace($parametro1);
@@ -106,9 +243,16 @@ class Table {
 		return $this;
 	}
 
+	/**
+	 * WHERE CLAUSE SQL QUERY
+	 * @param  String $parametro PARAMETRO_NOMBRE
+	 * @param  String $operador  OPERADOR O VALOR
+	 * @param  String $valor     VALOR_PARAMETRO
+	 * @return Table            RETURN CURRENT CLASS
+	 */
 	public function where($parametro, $operador, $valor=''){
 		if($valor=='' && $operador!=''){
-			$valor=$operador;
+			$valor= $operador;
 			$operador='';
 		}
 
@@ -118,6 +262,7 @@ class Table {
 			$this->where .= ' AND '.$parametro;
 		}
 
+		$valor = $this->SQL_CLEAN_PARAMS($valor);
 		if(is_numeric($valor)){
 			if($operador!=''){
 				$this->where .= $operador.$valor;
@@ -142,6 +287,7 @@ class Table {
 			$this->where .= ' OR '.$parametro;
 		}
 
+		$valor = $this->SQL_CLEAN_PARAMS($valor);
 		if(is_numeric($valor)){
 			if($operador!=''){
 				$this->where .= $operador.$valor;
@@ -154,9 +300,15 @@ class Table {
 		return $this;
 	}
 
-	public function inner($table, $parametro1, $parametro2){
+	public function inner(Table $table, $table_param, $current_param){
 	}
 
+	/**
+	 * ORDER BY CLAUSE SQL QUERY
+	 * @param  String $parametro PARAMETRO_ORDEN
+	 * @param  String $tipo      ORDEN TYPE ASC_DESC
+	 * @return Table            RETURN CURRENT CLASS
+	 */
 	public function order($parametro, $tipo=''){
 		if($this->order==''){
 			if ($tipo!='') {
@@ -174,6 +326,11 @@ class Table {
 		return $this;
 	}
 
+	/**
+	 * GROUP BY CLAUSE SQL QUERY
+	 * @param  String $parametro PARAMETRO_GROUP
+	 * @return Table            RETURN CURRENT CLASS
+	 */
 	public function group($parametro=''){
 		if ($parametro!='') {
 			if($this->group==''){
@@ -185,6 +342,11 @@ class Table {
 		return $this;
 	}
 
+	/**
+	 * LIMIT CLAUSE SQL QUERY
+	 * @param  integer $cantidad CANTIDAD DE DATOS
+	 * @return Table            RETURN CURRENT CLASS
+	 */
 	public function limit($cantidad=1000){
 		if(is_numeric($cantidad)){
 			$this->limit=$cantidad;
@@ -264,7 +426,7 @@ class Table {
 	 */
 	public function findSQL($id){
 		if(is_numeric($id)){
-			$consulta = "SELECT ".$this->select." FROM ".$this->tabla." WHERE ".$this->key()."=".$id;
+			$consulta = "SELECT ".$this->select." FROM ".$this->tabla." WHERE ".$this->KEY()."=".$id;
 			return $consulta;
 		}else{
 			return '';
@@ -384,6 +546,67 @@ class Table {
 	}
 
 	public function delete($datos){
+	}
+
+
+
+
+
+
+	/**
+	 * ENCRIPTADO DE TEXTO CON LLAVE
+	 * @param  String $cadena        TEXTO A ENCRIPTAR
+	 * @param  String $llave_cifrado LLAVE DE CIFRADO
+	 * @return String                TEXTO CIFRADO
+	 */
+	public function encriptar($cadena, $llave_cifrado){
+		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
+		return $encrypted;
+	}
+	function encrypt($string, $key) {
+		$result = '';
+		for($i=0; $i<strlen($string); $i++) {
+			$char = substr($string, $i, 1);
+			$keychar = substr($key, ($i % strlen($key))-1, 1);
+			$char = chr(ord($char)+ord($keychar));
+			$result.=$char;
+		}
+		return base64_encode($result);
+		// $algorithm = MCRYPT_BLOWFISH;
+		// $key = 'That golden key that opens the palace of eternity.';
+		// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
+		// $mode = MCRYPT_MODE_CBC;
+
+		// $iv = mcrypt_create_iv(mcrypt_get_iv_size($algorithm, $mode), MCRYPT_DEV_URANDOM);
+
+		// $encrypted_data = mcrypt_encrypt($algorithm, $key, $data, $mode, $iv);
+		// $plain_text = base64_encode($encrypted_data);
+		// echo $plain_text . "\n";
+
+		// $encrypted_data = base64_decode($plain_text);
+		// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
+		// echo $decoded . "\n";
+	}
+	/**
+	 * DESENCRIPTADO DE DATOS CON LLAVE
+	 * @param  String $cadena           TEXTO A DESCIFRAR
+	 * @param  String $llave_descifrado LLAVE DE DESENCRIPTADO
+	 * @return String                   TEXTO DESENCRIPTADO
+	 */
+	public function desencriptar($cadena, $llave_descifrado){
+		$decrypted = mcrypt_ecb( MCRYPT_DES, $llave_descifrado, $cadena, MCRYPT_DECRYPT );
+		return $decrypted;
+	}
+	function decrypt($string, $key) {
+		$result = '';
+		$string = base64_decode($string);
+		for($i=0; $i<strlen($string); $i++) {
+			$char = substr($string, $i, 1);
+			$keychar = substr($key, ($i % strlen($key))-1, 1);
+			$char = chr(ord($char)-ord($keychar));
+			$result.=$char;
+		}
+		return $result;
 	}
 }
 
