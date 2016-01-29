@@ -1,5 +1,5 @@
 <?php
-require_once 'MyDB.php';
+require_once 'DB.php';
 
 // CLASE TABLA PARA HACER CONSULTAS
 class Table {
@@ -28,7 +28,7 @@ class Table {
 	 */
 	function __construct($nombre1) {
 		$this->tabla = strtoupper($nombre1);
-		$this->mydb = new MyDB();
+		$this->mydb = new DB();
 		return $this;
 	}
 	/**
@@ -114,7 +114,7 @@ class Table {
 	}
 	/**
 	 * COMPRUEBA SI EL NOMBRE DE UNA COLUMNA EXISTE
-	 * @param  String $column_name NombreDeLaColumna
+	 * @param  String $columns NOMBRE DE LA COLUMNA
 	 * @return Boolean     TRUE (if exist) or FALSE (if not exist)
 	 */
 	public function COLUMN_EXISTS($columna=''){
@@ -213,6 +213,12 @@ class Table {
 		}
 		return $this;
 	}
+	/**
+	 * SELECT (PARAM AS ALIAS) CLAUSE QUERY
+	 * @param  String $parametro1 NOMBRE DEL PARAMETRO
+	 * @param  String $asname     ALIAS PARAMETRO
+	 * @return Table             RETURN CURRENT CLASS
+	 */
 	public function selectAs($parametro1, $asname){
 		if(is_string($parametro1)){
 			$this->COLUMNS_EXISTS($parametro1);
@@ -275,6 +281,13 @@ class Table {
 		return $this;
 	}
 
+	/**
+	 * WHERE CLAUSE WITH OR
+	 * @param  String $parametro NOMBRE DEL PARAMETRO
+	 * @param  String $operador  OPERADOR O VALOR
+	 * @param  String $valor     VALOR DEL PARAMETRO
+	 * @return Table            RETURN CURRENT CLASS
+	 */
 	public function whereOr($parametro, $operador, $valor=''){
 		if($valor=='' && $operador!=''){
 			$valor=$operador;
@@ -300,6 +313,13 @@ class Table {
 		return $this;
 	}
 
+	/**
+	 * INNER JOIN CLAUSE SQL
+	 * @param  Table  $table         [description]
+	 * @param  [type] $table_param   [description]
+	 * @param  [type] $current_param [description]
+	 * @return [type]                [description]
+	 */
 	public function inner(Table $table, $table_param, $current_param){
 	}
 
@@ -419,6 +439,8 @@ class Table {
 
 
 
+
+
 	/**
 	 * OBTENER LA CONSULTA DE UNA BUSQUEDA POR ID
 	 * @param  Int $id ID_REGISTRO
@@ -429,7 +451,7 @@ class Table {
 			$consulta = "SELECT ".$this->select." FROM ".$this->tabla." WHERE ".$this->KEY()."=".$id;
 			return $consulta;
 		}else{
-			return '';
+			throw new Exception("findSQL RECIBE UN NUMERO, '".$id."' NO ES UN NUMERO", 4);
 		}
 	}
 
@@ -442,9 +464,13 @@ class Table {
 		if(is_numeric($id)){
 			$consulta = $this->findSQL($id);
 			$resultado = $this->mydb->consultar($consulta);
-			return $resultado->fetch_object();
+			if($this->mydb->count_rows($resultado)>0){
+				return $resultado->fetch_object();
+			}else{
+				return null;
+			}
 		}else{
-			return '';
+			throw new Exception("find RECIBE UN NUMERO, '".$id."' NO ES UN NUMERO", 4);
 		}
 	}
 
@@ -457,12 +483,19 @@ class Table {
 		if(is_numeric($id)){
 			$consulta = $this->findSQL($id);
 			$resultado = $this->mydb->consultar($consulta);
-			$json = $this->mydb->jsonrow($resultado->fetch_object());
-			return $json;
+
+			if($this->mydb->count_rows($resultado)>0){
+				$json = $this->mydb->jsonrow($resultado->fetch_object());
+				return $json;
+			}else{
+				return '{}';
+			}
 		}else{
-			return '';
+			throw new Exception("findJSON RECIBE UN NUMERO, '".$id."' NO ES UN NUMERO", 4);
 		}
 	}
+
+
 
 
 

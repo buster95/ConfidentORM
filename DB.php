@@ -3,7 +3,7 @@ require_once 'Table.php';
 /**
 * GENERADOR DE CONSULTAS PARA MYSQL
 */
-class MyDB{
+class DB{
 	// VARIABLES DE CONFIGURACION
 	private $user='root'; // USUARIO de la BASE DE DATOS
 	private $password=''; // PASSWORD del usuario de la BASE DE DATOS
@@ -24,6 +24,14 @@ class MyDB{
 			trigger_error('Database connection failed: '.$con->connect_error, E_USER_ERROR);
 		}else{
 			return $con;
+		}
+	}
+
+	private function getHOST(){
+		if($this->port==''){
+			return $this->host;
+		}else{
+			return $this->host.':'.$this->port;
 		}
 	}
 
@@ -93,12 +101,8 @@ class MyDB{
 		return $datos;
 	}
 
-	private function getHOST(){
-		if($this->port==''){
-			return $this->host;
-		}else{
-			return $this->host.':'.$this->port;
-		}
+	public function count_rows($resultado){
+		return mysqli_num_rows($resultado);
 	}
 }
 
