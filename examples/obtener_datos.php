@@ -1,8 +1,9 @@
 <?php
 
 echo "Bienvenidos a la presentacion de este ORM";
+echo '<br>';
 
-require_once '/../generador/DB.php';
+require_once '/../DB.php';
 echo "<br>";
 
 $usuarios =  DB::table('usuarios')->get();
