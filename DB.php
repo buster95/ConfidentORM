@@ -104,6 +104,29 @@ class DB{
 	public function count_rows($resultado){
 		return mysqli_num_rows($resultado);
 	}
+
+	public static function cifrar($cadena, $llave){
+		$result = '';
+		for($i=0; $i<strlen($cadena); $i++) {
+			$char = substr($cadena, $i, 1);
+			$keychar = substr($llave, ($i % strlen($llave))-1, 1);
+			$char = chr(ord($char)+ord($keychar));
+			$result.=$char;
+		}
+		return base64_encode($result);
+	}
+
+	public static function descifrar($cadena, $llave){
+		$result = '';
+		$cadena = base64_decode($cadena);
+		for($i=0; $i<strlen($cadena); $i++) {
+			$char = substr($cadena, $i, 1);
+			$keychar = substr($llave, ($i % strlen($llave))-1, 1);
+			$char = chr(ord($char)-ord($keychar));
+			$result.=$char;
+		}
+		return $result;
+	}
 }
 
 ?>

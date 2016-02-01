@@ -27,10 +27,28 @@ class Table {
 	 * @param String $nombre1 Nombre De La Tabla en la DataBase
 	 */
 	function __construct($nombre1) {
-		$this->tabla = strtoupper($nombre1);
 		$this->mydb = new DB();
+		$this->TABLE_EXISTS($nombre1);
+
+		$this->tabla = strtoupper($nombre1);
 		return $this;
 	}
+
+	/**
+	 * RETORNA BOOLEAN SI EXISTE EL NOMBRE DE UNA TABLA
+	 * @param Boolean $table_name NOMBRE DE LA TABLA
+	 */
+	private function TABLE_EXISTS($table_name){
+		$consulta = 'SHOW TABLES;';
+		$tablas = $this->mydb->consultar($consulta);
+		while($tabla = $tablas->fetch_array(MYSQLI_NUM)){
+			if(strtolower($table_name) == strtolower($tabla[0])){
+				return true;
+			}
+		}
+		throw new Exception("TABLA NO EXISTE => ".$table_name, 1);
+	}
+
 	/**
 	 * LLAVE PRIMARIA DE LA TABLA
 	 * @return String LLAVE PRIMARIA
@@ -43,18 +61,6 @@ class Table {
 			}
 		}
 		return '';
-	}
-	/**
-	 * COLUMNAS
-	 * @return String CAMPOS DE LA TABLA
-	 */
-	public function COLUMNAS(){
-		$columnas = $this->mydb->consultar('DESCRIBE '.$this->tabla);
-		$campos = array();
-		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
-			$campos[] = $fila['Field'];
-		}
-		return $campos;
 	}
 
 	/**
@@ -71,19 +77,43 @@ class Table {
 	}
 
 	/**
-	 * QUITA CARACTERES ESPECIALES DE UNA CADENA
-	 * @param  String $cadena CADENA A LIMPIAR
-	 * @return String         CADENA LIMPIADA
+	 * COLUMNAS
+	 * @return String CAMPOS DE LA TABLA
 	 */
-	private function SQL_CLEAN_PARAMS($cadena)	{
-		$caracteres = array('\'','"','=','!',
-			'<','>','¿','?','¡','$','\\','{',
-			'}','[',']','#','&','(',')',
-			'+','-',' ');
-		$filtrada = str_replace($caracteres, '', $cadena);
-		$filtrada = str_replace(array('%','*'), '%', $cadena);
-		return $filtrada;
+	public function COLUMNAS(){
+		$columnas = $this->mydb->consultar('DESCRIBE '.$this->tabla);
+		$campos = array();
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			$campos[] = $fila['Field'];
+		}
+		return $campos;
 	}
+
+	/**
+	 * RETORNA EL TIPO DE DATO DE UNA COLUMNA
+	 * RETURN NUMBER OR RETURN STRING OR BOOLEAN
+	 * @param String $columna NOMBRE DE LA COLUMNA
+	 */
+	public function COLUMN_TYPE($columna){
+		$columnas = $this->mydb->consultar('SHOW COLUMNS FROM '.$this->tabla." WHERE Field='".$columna."'");
+		$number = array('int','float','double');
+		$string = array('varchar');
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			$campos[] = $fila['Field'];
+		}
+		return $campos;
+	}
+
+	public function IS_OPERADOR($operador){
+		$operadores = array('=','>','<','>=','<=','===');
+		foreach ($operadores as $key) {
+			if($operador==$key){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * LIMPIA UN PARAMETRO DE FUNCIONES Y CARACTERES
 	 * @param  String $string1 PARAMETRO A VERIFICAR
@@ -249,6 +279,26 @@ class Table {
 		return $this;
 	}
 
+
+
+
+
+
+
+	/**
+	 * QUITA CARACTERES ESPECIALES DE UNA CADENA
+	 * @param  String $cadena CADENA A LIMPIAR
+	 * @return String         CADENA LIMPIADA
+	 */
+	private function SQL_CLEAN($cadena)	{
+		$caracteres = array('\'','"','=','!',
+			'<','>','¿','?','¡','$','\\','{',
+			'}','[',']','#','&','(',')',
+			'+','-',' ');
+		$filtrada = str_replace($caracteres, '', $cadena);
+		$filtrada = str_replace(array('%','*'), '%', $cadena);
+		return $filtrada;
+	}
 	/**
 	 * WHERE CLAUSE SQL QUERY
 	 * @param  String $parametro PARAMETRO_NOMBRE
@@ -268,7 +318,7 @@ class Table {
 			$this->where .= ' AND '.$parametro;
 		}
 
-		$valor = $this->SQL_CLEAN_PARAMS($valor);
+		$valor = $this->SQL_CLEAN($valor);
 		if(is_numeric($valor)){
 			if($operador!=''){
 				$this->where .= $operador.$valor;
@@ -300,7 +350,7 @@ class Table {
 			$this->where .= ' OR '.$parametro;
 		}
 
-		$valor = $this->SQL_CLEAN_PARAMS($valor);
+		$valor = $this->SQL_CLEAN($valor);
 		if(is_numeric($valor)){
 			if($operador!=''){
 				$this->where .= $operador.$valor;
@@ -312,6 +362,13 @@ class Table {
 		}
 		return $this;
 	}
+
+
+
+
+
+
+
 
 	/**
 	 * INNER JOIN CLAUSE SQL
@@ -540,7 +597,7 @@ class Table {
 		return $this->mydb->jsondata($resultados);
 	}
 
-	public function getJSONROW(){
+	public function getFirtsJSON(){
 		$resultados = $this->mydb->consultar($this->getSQL());
 		return $this->mydb->jsonrow($resultados->fetch_object());
 	}
@@ -596,30 +653,24 @@ class Table {
 		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
 		return $encrypted;
 	}
-	function encrypt($string, $key) {
-		$result = '';
-		for($i=0; $i<strlen($string); $i++) {
-			$char = substr($string, $i, 1);
-			$keychar = substr($key, ($i % strlen($key))-1, 1);
-			$char = chr(ord($char)+ord($keychar));
-			$result.=$char;
-		}
-		return base64_encode($result);
-		// $algorithm = MCRYPT_BLOWFISH;
-		// $key = 'That golden key that opens the palace of eternity.';
-		// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
-		// $mode = MCRYPT_MODE_CBC;
 
-		// $iv = mcrypt_create_iv(mcrypt_get_iv_size($algorithm, $mode), MCRYPT_DEV_URANDOM);
 
-		// $encrypted_data = mcrypt_encrypt($algorithm, $key, $data, $mode, $iv);
-		// $plain_text = base64_encode($encrypted_data);
-		// echo $plain_text . "\n";
+	// $algorithm = MCRYPT_BLOWFISH;
+	// $key = 'That golden key that opens the palace of eternity.';
+	// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
+	// $mode = MCRYPT_MODE_CBC;
 
-		// $encrypted_data = base64_decode($plain_text);
-		// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
-		// echo $decoded . "\n";
-	}
+	// $iv = mcrypt_create_iv(mcrypt_get_iv_size($algorithm, $mode), MCRYPT_DEV_URANDOM);
+
+	// $encrypted_data = mcrypt_encrypt($algorithm, $key, $data, $mode, $iv);
+	// $plain_text = base64_encode($encrypted_data);
+	// echo $plain_text . "\n";
+
+	// $encrypted_data = base64_decode($plain_text);
+	// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
+	// echo $decoded . "\n";
+
+
 	/**
 	 * DESENCRIPTADO DE DATOS CON LLAVE
 	 * @param  String $cadena           TEXTO A DESCIFRAR
@@ -629,17 +680,6 @@ class Table {
 	public function desencriptar($cadena, $llave_descifrado){
 		$decrypted = mcrypt_ecb( MCRYPT_DES, $llave_descifrado, $cadena, MCRYPT_DECRYPT );
 		return $decrypted;
-	}
-	function decrypt($string, $key) {
-		$result = '';
-		$string = base64_decode($string);
-		for($i=0; $i<strlen($string); $i++) {
-			$char = substr($string, $i, 1);
-			$keychar = substr($key, ($i % strlen($key))-1, 1);
-			$char = chr(ord($char)-ord($keychar));
-			$result.=$char;
-		}
-		return $result;
 	}
 }
 
