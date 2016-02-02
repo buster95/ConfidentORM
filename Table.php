@@ -1,6 +1,9 @@
 <?php
 require_once 'DB.php';
 
+define('DESC',"DESC",true);
+define('ASC',"ASC",true);
+
 // CLASE TABLA PARA HACER CONSULTAS
 class Table {
 	// PARAMETROS DE LA TABLA
@@ -18,10 +21,6 @@ class Table {
 	private $on='';
 
 	private $mydb;
-
-	public static $DESC='DESC';
-	public static $ASC='ASC';
-
 	/**
 	 * CONSTRUCTOR DE LA CLASE
 	 * @param String $nombre1 Nombre De La Tabla en la DataBase
