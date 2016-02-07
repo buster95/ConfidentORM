@@ -1,12 +1,16 @@
 <?php
 require_once 'DB.php';
 
-define('DESC',"DESC",true);
-define('ASC',"ASC",true);
+define('DESC','DESC',true);
+define('ASC','ASC',true);
 
-// CLASE TABLA PARA HACER CONSULTAS
+// ERROR LA COLUMNA NO EXISTE: CODE 1
+// ERROR APOSTROFE EN LA CONSULTA: CODE 2
+// ERROR NO ES NOMBRE PARA COLUMNA: CODE 3
+
+// PARAMETRO VACIO O NULO: CODE 9
+
 class Table {
-	// PARAMETROS DE LA TABLA
 	private $tabla='';
 	private $select='*';
 	private $where='';
@@ -21,20 +25,22 @@ class Table {
 	private $on='';
 
 	private $mydb;
+
 	/**
 	 * CONSTRUCTOR DE LA CLASE
 	 * @param String $nombre1 Nombre De La Tabla en la DataBase
 	 */
 	function __construct($nombre1) {
 		$this->mydb = new DB();
-		$this->TABLE_EXISTS($nombre1);
 
+		$this->TABLE_EXISTS($nombre1);
 		$this->tabla = strtoupper($nombre1);
+
 		return $this;
 	}
 
 	/**
-	 * RETORNA BOOLEAN SI EXISTE EL NOMBRE DE UNA TABLA
+	 * RETORNA TRUE SI EXISTE EL NOMBRE DE UNA TABLA
 	 * @param Boolean $table_name NOMBRE DE LA TABLA
 	 */
 	private function TABLE_EXISTS($table_name){
@@ -90,25 +96,51 @@ class Table {
 
 	/**
 	 * RETORNA EL TIPO DE DATO DE UNA COLUMNA
-	 * RETURN NUMBER OR RETURN STRING OR BOOLEAN
+	 * RETURN NUMBER, STRING, DATE, BOOLEAN
 	 * @param String $columna NOMBRE DE LA COLUMNA
 	 */
-	public function COLUMN_TYPE($columna){
-		$columnas = $this->mydb->consultar('SHOW COLUMNS FROM '.$this->tabla." WHERE Field='".$columna."'");
-		$number = array('int','float','double');
-		$string = array('varchar');
-		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
-			$campos[] = $fila['Field'];
+	public function COLUMN_TYPE($columna=''){
+		if($columna==''){
+			throw new Exception("PARAMETRO VACIO", 9);
 		}
-		return $campos;
+		$columnas = $this->mydb->consultar('SHOW COLUMNS FROM '.$this->tabla." WHERE Field='".$columna."'");
+
+		$number = array('bigint','int','smallint','mediumint','real','float','double','decimal');
+		$string = array('varchar','nvarchar','char','text','tinytext','mediumtext','longtext');
+		$date = array('date','time','datetime','timestamp','year');
+		$booleano = array('tinyint');
+		$binario = array('binary','tinyblob','blob','mediumblob','bigblob','longblob','varbinary');
+
+		$filter_type = array('1','2','3','4','5','6','7','8','9','0','(',')');
+		$tipo = false;
+
+		while ($fila = $columnas->fetch_array(MYSQLI_ASSOC)) {
+			$tipo = strtolower($fila['Type']);
+			$tipo = str_replace($filter_type, '', $tipo);
+
+			if ($this->search_array($number, $tipo)) {
+				return "NUMBER";
+			}else if ($this->search_array($string, $tipo)) {
+				return "STRING";
+			}else if ($this->search_array($date, $tipo)) {
+				return "DATE";
+			}else if ($this->search_array($booleano, $tipo)) {
+				return "BOOLEAN";
+			}else if($this->search_array($binario, $tipo)){
+				return "BINARY";
+			}
+		}
+		throw new Exception("COLUMNA => ( ".$tipo." ) NO EXISTE", 1);
 	}
 
+	/**
+	 * RETORNA SI UNA CADENA ES UN OPERADOR
+	 * @param Boolean $operador TRUE,FALSE
+	 */
 	public function IS_OPERADOR($operador){
-		$operadores = array('=','>','<','>=','<=','===');
-		foreach ($operadores as $key) {
-			if($operador==$key){
-				return true;
-			}
+		$operadores = array('=','!=','===','!==','>','<','>=','<=');
+		if($this->search_array($operadores,$operador)){
+			return true;
 		}
 		return false;
 	}
@@ -125,22 +157,28 @@ class Table {
 		return $verificador;
 	}
 
+	/**
+	 * COMPRUEBA EL NOMBRE DE VARIAS COLUMNAS
+	 * @param Boolean $columnas TRUE:EXISTE,FALSE:NO_EXISTE
+	 */
 	public function COLUMNS_EXISTS($columnas){
 		if($columnas==''){ return true; }
-
-		if(is_string($columnas)){
-			$columnas = $this->SELECT_CLEAN_PARAMS($columnas);
-		}
+		$columnas = $this->SELECT_CLEAN_PARAMS($columnas);
 		if(strpos($columnas,',')>-1){
 			$columnas = explode(',', $columnas);
 		}
+
 		if(is_array($columnas)){
 			foreach ($columnas as $valor) {
 				$this->COLUMN_EXISTS($valor);
 			}
 			return true;
+		}else if(is_string($columnas)){
+			$this->COLUMN_EXISTS($valor);
+			return true;
 		}
 	}
+
 	/**
 	 * COMPRUEBA SI EL NOMBRE DE UNA COLUMNA EXISTE
 	 * @param  String $columns NOMBRE DE LA COLUMNA
@@ -149,11 +187,9 @@ class Table {
 	public function COLUMN_EXISTS($columna=''){
 		$column_name = $columna;
 		if($column_name==''){ return true; }
-
 		if(is_string($column_name)){
 			$column_name = $this->SELECT_CLEAN_PARAMS($column_name);
 		}
-
 		if (strpos($column_name, '\'')===0) {
 			$is_a_text = $column_name;
 			$contador = 0;
@@ -169,7 +205,6 @@ class Table {
 			}else {
 				throw new Exception("SQL QUERY CON => ( ".$column_name." ) APOSTROFE DE MAS", 2);
 			}
-
 		}else if (strpos($column_name, '\'') > 0) {
 			throw new Exception("NO ES UN NOMBRE => ( ".$column_name." ) PARA UNA COLUMNA", 3);
 		}
@@ -188,9 +223,9 @@ class Table {
 	 * @param  String $string1 Parametro de Entrada
 	 * @return String          Parametro Filtrado
 	 */
-	private function selectReplace($string1){
+	private function TABLENAME_ADD($string1){
 		$string1 = strtolower($string1);
-		$string1 = strtoupper($this->tabla).'.'.$string1;
+		$string1 = $this->tabla.'.'.$string1;
 		$string1 = str_replace('(', '('.$this->tabla.'.', $string1);
 		$string1 = str_replace(',', ','.$this->tabla.'.', $string1);
 		$string1 = str_replace('+', '+'.$this->tabla.'.', $string1);
@@ -208,6 +243,17 @@ class Table {
 		$string1 = str_replace($this->tabla.'.count(', 'COUNT(', $string1);
 		return $string1;
 	}
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * SELECT CLAUSE EN EL SQL QUERY
 	 * @param  String $parametro1 NOMBRE DEL PARAMETRO A SELECCIONAR
@@ -216,9 +262,7 @@ class Table {
 	public function select($parametro1) {
 		if(is_string($parametro1)){
 			$this->COLUMNS_EXISTS($parametro1);
-		}else{
-			return $this;
-		}
+		}else{ return $this; }
 
 		if ((strpos($parametro1,'(')>-1 &&
 				!strpos($parametro1,')')>-1) ||
@@ -231,17 +275,18 @@ class Table {
 
 		if($this->select=='*'){
 			if(is_string($parametro1)){
-				$parametro1 = $this->selectReplace($parametro1);
+				$parametro1 = $this->TABLENAME_ADD($parametro1);
 				$this->select = $parametro1;
 			}
 		}else{
 			if(is_string($parametro1)){
-				$parametro1 = $this->selectReplace($parametro1);
+				$parametro1 = $this->TABLENAME_ADD($parametro1);
 				$this->select .= ','.$parametro1;
 			}
 		}
 		return $this;
 	}
+
 	/**
 	 * SELECT (PARAM AS ALIAS) CLAUSE QUERY
 	 * @param  String $parametro1 NOMBRE DEL PARAMETRO
@@ -266,17 +311,20 @@ class Table {
 
 		if ($this->select=='*') {
 			if(is_string($parametro1) && is_string($asname)){
-				$parametro1 = $this->selectReplace($parametro1);
+				$parametro1 = $this->TABLENAME_ADD($parametro1);
 				$this->select = $parametro1.' AS '.$asname;
 			}
 		}else{
 			if(is_string($parametro1) && is_string($asname)){
-				$parametro1 = $this->selectReplace($parametro1);
+				$parametro1 = $this->TABLENAME_ADD($parametro1);
 				$this->select .= ','.$parametro1.' AS '.$asname;
 			}
 		}
 		return $this;
 	}
+
+
+
 
 
 
@@ -290,77 +338,133 @@ class Table {
 	 * @return String         CADENA LIMPIADA
 	 */
 	private function SQL_CLEAN($cadena)	{
-		$caracteres = array('\'','"','=','!',
-			'<','>','¿','?','¡','$','\\','{',
-			'}','[',']','#','&','(',')',
-			'+','-',' ');
-		$filtrada = str_replace($caracteres, '', $cadena);
-		$filtrada = str_replace(array('%','*'), '%', $cadena);
-		return $filtrada;
+		if(is_string($cadena)){
+			$caracteres = array('\'','"','=','!',
+				'<','>','¿','?','¡','$','\\','{',
+				'}','[',']','#','&','(',')',
+				'+','-',' ');
+			$filtrada = str_replace($caracteres, '', $cadena);
+			$filtrada = str_replace(array('%','*'), '%', $cadena);
+			return $filtrada;
+		}else{
+			return $cadena;
+		}
 	}
+	private function SQL_CLEAN_SPECIAL($cadena)	{
+		if(is_string($cadena)){
+			$caracteres = array('\'','"','=','!',
+				'<','>','¿','?','¡','$','\\','{',
+				'}','[',']','#','&',
+				'+');
+			$filtrada = str_replace($caracteres, '', $cadena);
+			$filtrada = str_replace(array('%','*'), '%', $cadena);
+			return $filtrada;
+		}else{
+			return $cadena;
+		}
+	}
+
 	/**
 	 * WHERE CLAUSE SQL QUERY
 	 * @param  String $parametro PARAMETRO_NOMBRE
 	 * @param  String $operador  OPERADOR O VALOR
 	 * @param  String $valor     VALOR_PARAMETRO
+	 * @param  boolean $clean_special     CLEAN STRING RICH_TEXT OR LOGIN DEFAULT LOGIN
 	 * @return Table            RETURN CURRENT CLASS
 	 */
-	public function where($parametro, $operador, $valor=''){
-		if($valor=='' && $operador!=''){
-			$valor= $operador;
-			$operador='';
+	public function where($parametro, $operador, $valor='', $clean_special=false){
+		if($valor=='' && $valor!==0 && $operador!=''){
+			$valor = $operador;
+			$operador = '';
 		}
-
+		$this->COLUMN_EXISTS($parametro);
 		if($this->where==''){
-			$this->where = $parametro;
+			$this->where = $this->TABLENAME_ADD($parametro);
 		}else{
-			$this->where .= ' AND '.$parametro;
+			$this->where .= ' AND '.$this->TABLENAME_ADD($parametro);
 		}
 
-		$valor = $this->SQL_CLEAN($valor);
-		if(is_numeric($valor)){
-			if($operador!=''){
-				$this->where .= $operador.$valor;
+		if(is_bool($clean_special)){
+			if($clean_special){
+				$valor = $this->SQL_CLEAN_SPECIAL($valor);
 			}else{
-				$this->where .= '='.$valor;
+				$valor = $this->SQL_CLEAN($valor);
 			}
-		}else if(is_string($valor)){
-			$this->where .= " LIKE '".$valor."'";
+		}else{
+			$valor = $this->SQL_CLEAN($valor);
+		}
+
+		if($operador=='' && !(is_string($valor) && $valor!==0)){
+			$this->where .= '=';
+		}else{
+			if(is_string($valor) && $valor!==0){
+				$this->where .= ' LIKE ';
+			}else{
+				$this->where .= $operador;
+			}
+		}
+
+		if($this->COLUMN_TYPE($parametro)=='NUMBER' && (is_numeric($valor) || $valor===0)){
+			$this->where .= $valor;
+		}else if($this->COLUMN_TYPE($parametro)=='STRING' && (is_string($valor) && $valor!==0)){
+			$this->where .= "'".$valor."'";
+		}else{
+			throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
 		}
 		return $this;
 	}
 
 	/**
 	 * WHERE CLAUSE WITH OR
-	 * @param  String $parametro NOMBRE DEL PARAMETRO
+	 * @param  String $parametro PARAMETRO_NOMBRE
 	 * @param  String $operador  OPERADOR O VALOR
-	 * @param  String $valor     VALOR DEL PARAMETRO
+	 * @param  String $valor     VALOR_PARAMETRO
+	 * @param  boolean $clean_special     CLEAN STRING RICH_TEXT OR LOGIN DEFAULT LOGIN
 	 * @return Table            RETURN CURRENT CLASS
 	 */
-	public function whereOr($parametro, $operador, $valor=''){
-		if($valor=='' && $operador!=''){
-			$valor=$operador;
-			$operador='';
+	public function whereOr($parametro, $operador, $valor='', $clean_special=false){
+		if($valor=='' && $valor!==0 && $operador!=''){
+			$valor = $operador;
+			$operador = '';
 		}
-
+		$this->COLUMN_EXISTS($parametro);
 		if($this->where==''){
-			$this->where = $parametro;
+			$this->where = $this->TABLENAME_ADD($parametro);
 		}else{
-			$this->where .= ' OR '.$parametro;
+			$this->where .= ' OR '.$this->TABLENAME_ADD($parametro);
 		}
 
-		$valor = $this->SQL_CLEAN($valor);
-		if(is_numeric($valor)){
-			if($operador!=''){
-				$this->where .= $operador.$valor;
+		if(is_bool($clean_special)){
+			if($clean_special){
+				$valor = $this->SQL_CLEAN_SPECIAL($valor);
 			}else{
-				$this->where .= '='.$valor;
+				$valor = $this->SQL_CLEAN($valor);
 			}
-		}else if(is_string($valor)){
-			$this->where .= " LIKE '".$valor."'";
+		}else{
+			$valor = $this->SQL_CLEAN($valor);
+		}
+
+		if($operador=='' && !(is_string($valor) && $valor!==0)){
+			$this->where .= '=';
+		}else{
+			if(is_string($valor) && $valor!==0){
+				$this->where .= ' LIKE ';
+			}else{
+				$this->where .= $operador;
+			}
+		}
+
+		if($this->COLUMN_TYPE($parametro)=='NUMBER' && (is_numeric($valor) || $valor===0)){
+			$this->where .= $valor;
+		}else if($this->COLUMN_TYPE($parametro)=='STRING' && (is_string($valor) && $valor!==0)){
+			$this->where .= "'".$valor."'";
+		}else{
+			throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
 		}
 		return $this;
 	}
+
+
 
 
 
@@ -378,6 +482,16 @@ class Table {
 	 */
 	public function inner(Table $table, $table_param, $current_param){
 	}
+
+
+
+
+
+
+
+
+
+
 
 	/**
 	 * ORDER BY CLAUSE SQL QUERY
@@ -429,6 +543,9 @@ class Table {
 		}
 		return $this;
 	}
+
+
+
 
 
 
@@ -497,6 +614,9 @@ class Table {
 
 
 
+
+
+
 	/**
 	 * OBTENER LA CONSULTA DE UNA BUSQUEDA POR ID
 	 * @param  Int $id ID_REGISTRO
@@ -517,16 +637,12 @@ class Table {
 	 * @return Object RegistroObtenido
 	 */
 	public function find($id){
-		if(is_numeric($id)){
-			$consulta = $this->findSQL($id);
-			$resultado = $this->mydb->consultar($consulta);
-			if($this->mydb->count_rows($resultado)>0){
-				return $resultado->fetch_object();
-			}else{
-				return null;
-			}
+		$consulta = $this->findSQL($id);
+		$resultado = $this->mydb->consultar($consulta);
+		if($this->mydb->count_rows($resultado)>0){
+			return $resultado->fetch_object();
 		}else{
-			throw new Exception("find RECIBE UN NUMERO, '".$id."' NO ES UN NUMERO", 4);
+			return null;
 		}
 	}
 
@@ -536,18 +652,14 @@ class Table {
 	 * @return String REGISTRO_JSON
 	 */
 	public function findJSON($id){
-		if(is_numeric($id)){
-			$consulta = $this->findSQL($id);
-			$resultado = $this->mydb->consultar($consulta);
+		$consulta = $this->findSQL($id);
+		$resultado = $this->mydb->consultar($consulta);
 
-			if($this->mydb->count_rows($resultado)>0){
-				$json = $this->mydb->jsonrow($resultado->fetch_object());
-				return $json;
-			}else{
-				return '{}';
-			}
+		if($this->mydb->count_rows($resultado)>0){
+			$json = $this->mydb->jsonrow($resultado->fetch_object());
+			return $json;
 		}else{
-			throw new Exception("findJSON RECIBE UN NUMERO, '".$id."' NO ES UN NUMERO", 4);
+			return '{}';
 		}
 	}
 
@@ -561,7 +673,7 @@ class Table {
 
 
 	public function getSQL(){
-		$consulta = "SELECT ".$this->select." FROM ".strtoupper($this->tabla);
+		$consulta = "SELECT ".$this->select." FROM ".$this->tabla;
 		if($this->inner!=''){
 			$consulta.= $this->inner;
 		}
@@ -607,6 +719,9 @@ class Table {
 
 
 
+
+
+
 	public function save($datos){
 		$consulta="INSERT INTO ".strtoupper($this->tabla).'(';
 		$insert = '';
@@ -614,7 +729,6 @@ class Table {
 		if(is_object($datos) || is_array($datos)){
 			foreach ($datos as $key => $value) {
 				$insert .= $key.',';
-
 				if(is_numeric($value)){
 					$values .= $value.',';
 				}else if(is_string($value)){
@@ -624,7 +738,7 @@ class Table {
 		}
 		$consulta .= $insert.$values.')';
 		$consulta = str_replace(',)', ')', $consulta);
-		$consulta = str_replace("'current_date()'", 'current_date()', $consulta);
+		$consulta = str_replace("'CURRENT_DATE()'", 'CURRENT_DATE()', $consulta);
 		return $consulta;
 	}
 
@@ -643,43 +757,20 @@ class Table {
 
 
 	/**
-	 * ENCRIPTADO DE TEXTO CON LLAVE
-	 * @param  String $cadena        TEXTO A ENCRIPTAR
-	 * @param  String $llave_cifrado LLAVE DE CIFRADO
-	 * @return String                TEXTO CIFRADO
+	 * BUSCA UNA CADENA EN UN ARRAY
+	 * @param  Array $array CONJUNTO DE DATOS
+	 * @param  String $value DATO A BUSCAR
+	 * @return Boolean        TRUE,FALSE
 	 */
-	public function encriptar($cadena, $llave_cifrado){
-		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
-		return $encrypted;
-	}
-
-
-	// $algorithm = MCRYPT_BLOWFISH;
-	// $key = 'That golden key that opens the palace of eternity.';
-	// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
-	// $mode = MCRYPT_MODE_CBC;
-
-	// $iv = mcrypt_create_iv(mcrypt_get_iv_size($algorithm, $mode), MCRYPT_DEV_URANDOM);
-
-	// $encrypted_data = mcrypt_encrypt($algorithm, $key, $data, $mode, $iv);
-	// $plain_text = base64_encode($encrypted_data);
-	// echo $plain_text . "\n";
-
-	// $encrypted_data = base64_decode($plain_text);
-	// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
-	// echo $decoded . "\n";
-
-
-	/**
-	 * DESENCRIPTADO DE DATOS CON LLAVE
-	 * @param  String $cadena           TEXTO A DESCIFRAR
-	 * @param  String $llave_descifrado LLAVE DE DESENCRIPTADO
-	 * @return String                   TEXTO DESENCRIPTADO
-	 */
-	public function desencriptar($cadena, $llave_descifrado){
-		$decrypted = mcrypt_ecb( MCRYPT_DES, $llave_descifrado, $cadena, MCRYPT_DECRYPT );
-		return $decrypted;
+	private function search_array($array, $value){
+		if(is_array($array)){
+			foreach ($array as $key) {
+				if($value==$key){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
-
 ?>

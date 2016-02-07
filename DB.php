@@ -127,6 +127,50 @@ class DB{
 		}
 		return $result;
 	}
+
+
+
+
+
+
+	/**
+	 * ENCRIPTADO DE TEXTO CON LLAVE
+	 * @param  String $cadena        TEXTO A ENCRIPTAR
+	 * @param  String $llave_cifrado LLAVE DE CIFRADO
+	 * @return String                TEXTO CIFRADO
+	 */
+	public function encriptar($cadena, $llave_cifrado){
+		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
+		return $encrypted;
+	}
+
+
+	// $algorithm = MCRYPT_BLOWFISH;
+	// $key = 'That golden key that opens the palace of eternity.';
+	// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
+	// $mode = MCRYPT_MODE_CBC;
+
+	// $iv = mcrypt_create_iv(mcrypt_get_iv_size($algorithm, $mode), MCRYPT_DEV_URANDOM);
+
+	// $encrypted_data = mcrypt_encrypt($algorithm, $key, $data, $mode, $iv);
+	// $plain_text = base64_encode($encrypted_data);
+	// echo $plain_text . "\n";
+
+	// $encrypted_data = base64_decode($plain_text);
+	// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
+	// echo $decoded . "\n";
+
+
+	/**
+	 * DESENCRIPTADO DE DATOS CON LLAVE
+	 * @param  String $cadena           TEXTO A DESCIFRAR
+	 * @param  String $llave_descifrado LLAVE DE DESENCRIPTADO
+	 * @return String                   TEXTO DESENCRIPTADO
+	 */
+	public function desencriptar($cadena, $llave_descifrado){
+		$decrypted = mcrypt_ecb( MCRYPT_DES, $llave_descifrado, $cadena, MCRYPT_DECRYPT );
+		return $decrypted;
+	}
 }
 
 ?>
