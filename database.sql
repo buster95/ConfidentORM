@@ -18,7 +18,7 @@ insert into usuarios(nombre, apellido, usuario, clave, fecha) values
 create table empleados(
 	id_empleado int not null primary key auto_increment,
     id_usuario int not null,
-    
+
     foreign key (id_usuario) references usuarios(id_usuario)
 );
 

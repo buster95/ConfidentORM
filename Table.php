@@ -174,7 +174,7 @@ class Table {
 			}
 			return true;
 		}else if(is_string($columnas)){
-			$this->COLUMN_EXISTS($valor);
+			$this->COLUMN_EXISTS($columnas);
 			return true;
 		}
 	}
@@ -771,6 +771,29 @@ class Table {
 			}
 		}
 		return false;
+	}
+}
+
+
+/**
+* 	SQL QUERY CONSULTA
+*/
+class Query {
+
+	private $consulta;
+
+	private $conexion;
+
+	function __construct($consulta)	{
+		$this->conexion = new DB();
+		$this->consulta = $consulta;
+		return $this;
+	}
+
+	public function get() {
+	}
+
+	public function getJSON() {
 	}
 }
 ?>

@@ -20,9 +20,6 @@ if(isset($_SESSION['autolinklogin'])){
 
 	<link rel="stylesheet" href="complements/bootstrap/bootstrap.css">
 	<link rel="stylesheet" href="complements/estilos.css">
-
-	<link rel="stylesheet" href="complements/icon/icon-moon.css">
-	<link rel="stylesheet" href="complements/icon/css/font-awesome.min.css">
 </head>
 <body>
 
@@ -43,7 +40,7 @@ if(isset($_SESSION['autolinklogin'])){
         <ul class="navbar-nav nav navbar-right">
             <li><a href="autolink.php">INICIO</a></li>
             <li><a href="autolink.new.php">CREAR</a></li>
-            <li><a href="autolink.config.php">CONFIGURAR</a></li>
+            <li><a href="#">CONFIGURAR</a></li>
             <li><a href="configuration/logout.php">SALIR</a></li>
         </ul>
     </div>
@@ -51,40 +48,12 @@ if(isset($_SESSION['autolinklogin'])){
 
 <div class="jumbotron text‐center" style="margin-top:0px;margin-bottom:0px;padding:10px 0px;">
 	<h1 align="center" style="margin-top:0px;"><small>AutoLink RESTful</small> </h1>
-	<h2 align="center">TABLA DE ENLACES GENERADOS</h2>
+	<h2 align="center">CONFIGURACIONES</h2>
 </div>
 
 <div class="container-fluid" style="margin-top: 0px;">
 	<div class="row">
 		<div class="col md-12 table-responsive">
-
-			<table class="table table-bordered table-striped">
-				<tr align="center">
-					<td width="15%">Tabla</td>
-					<td>Enlace</td>
-					<td width="20%">Opciones</td>
-				</tr>
-
-				<tr>
-					<td>usuarios</td>
-					<td>
-						<a href="#">http://localhost/Confident/confident/autolink.php</a>
-					</td>
-					<td>
-						<a class="btn btn-xs btn-primary" href="#">Editar</a>
-						<a class="btn btn-xs btn-danger" href="#">Eliminar</a>
-					</td>
-				</tr>
-
-				<tr>
-					<td>ventas</td>
-					<td></td>
-					<td>
-						<a class="btn btn-xs btn-primary" href="#" title="Editar Enlace"><i class="fa-edit"></i></a>
-						<a class="btn btn-xs btn-danger" href="#" title="Eliminar Enlace"><i class="fa-trash"></i></a>
-					</td>
-				</tr>
-			</table>
 
 		</div>
 	</div>

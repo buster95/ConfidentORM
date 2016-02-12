@@ -9,12 +9,21 @@ class DB{
 	private $password=''; // PASSWORD del usuario de la BASE DE DATOS
 	private $database='prueba'; // BASE DE DATOS
 	private $host='127.0.0.1'; // IPv4 o HOST de conexion
-	private $port='3306'; // puerto de conexion DEFAULT:3306
+	private $port='3306'; // Puerto DE Conexion DEFAULT:3306
 
 	public static function table($nombre_tabla) {
 		$tabla = new Table($nombre_tabla);
 		return $tabla;
 	}
+
+	public static function query($consulta) {
+		if($consulta!=null & $consulta!=''){
+			$query = new Query($consulta);
+			return $query;
+		}
+		throw new Exception("Consulta No aceptada", 1);
+	}
+
 	/**
 	 * @return mysqli_connect Conexion MySQL
 	 */

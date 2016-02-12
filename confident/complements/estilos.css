@@ -1,0 +1,51 @@
+body{
+	background: black;
+}
+.navbar-default{
+	background-color: #3D9970 !important;
+	border-radius: 0px;
+	margin-bottom: 0px;
+}
+
+.navbar-default > .navbar-header > .navbar-brand{
+	color: white;
+	font-weight: bold;
+}
+.navbar-default > .navbar-header > .navbar-brand:hover{
+	background: rgba(0, 0, 0, 0.15);
+}
+
+.navbar-default > .navbar-header > .navbar-toggle:hover {
+	background-color: rgba(0, 0, 0, 0.5);
+}
+.navbar-default > .navbar-header >
+.navbar-toggle > span.icon-bar {
+	background-color: white !important;
+}
+
+.navbar-default .navbar-nav li > a{
+	color: white;
+	font-weight: bold;
+}
+.navbar-default .navbar-nav li a:hover{
+	color: white;
+	background: rgba(0, 0, 0, 0.15);
+}
+.navbar-default .navbar-nav li a:focus{
+	color: white;
+	background: rgba(0, 0, 0, 0);
+	font-weight: bold;
+}
+
+.table tr{
+	background-color: white;
+	font-weight: bold;
+}
+.table tr:hover td{
+	background-color: rgba(0, 200, 0, 0.15);
+}
+.table tr:first-child{
+	background-color: #3D9970 !important;
+	color: white;
+	font-weight: bold;
+}
