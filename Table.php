@@ -698,7 +698,7 @@ class Table {
 		return $lista;
 	}
 
-	public function getFirts(){
+	public function getFirst(){
 		$resultados = $this->mydb->consultar($this->getSQL());
 		return $resultados->fetch_object();
 	}
@@ -708,7 +708,7 @@ class Table {
 		return $this->mydb->jsondata($resultados);
 	}
 
-	public function getFirtsJSON(){
+	public function getFirstJSON(){
 		$resultados = $this->mydb->consultar($this->getSQL());
 		return $this->mydb->jsonrow($resultados->fetch_object());
 	}
@@ -775,25 +775,43 @@ class Table {
 }
 
 
+
+
+
+
 /**
 * 	SQL QUERY CONSULTA
 */
 class Query {
 
 	private $consulta;
-
-	private $conexion;
+	private $db_conexion;
 
 	function __construct($consulta)	{
-		$this->conexion = new DB();
+		$this->db_conexion = new DB();
 		$this->consulta = $consulta;
 		return $this;
 	}
 
-	public function get() {
+	public function get(){
+		$resultados = $this->db_conexion->consultar($this->consulta);
+		$lista = $this->db_conexion->listar($resultados);
+		return $lista;
 	}
 
-	public function getJSON() {
+	public function getFirst(){
+		$resultados = $this->db_conexion->consultar($this->consulta);
+		return $resultados->fetch_object();
+	}
+
+	public function getJSON(){
+		$resultados = $this->db_conexion->consultar($this->consulta);
+		return $this->db_conexion->jsondata($resultados);
+	}
+
+	public function getFirstJSON(){
+		$resultados = $this->db_conexion->consultar($this->consulta);
+		return $this->db_conexion->jsonrow($resultados->fetch_object());
 	}
 }
 ?>

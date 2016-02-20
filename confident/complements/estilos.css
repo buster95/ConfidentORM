@@ -1,6 +1,13 @@
 body{
 	background: black;
 }
+
+.text-bold{
+	font-weight: bold;
+}
+
+
+
 .navbar-default{
 	background-color: #3D9970 !important;
 	border-radius: 0px;
@@ -26,6 +33,7 @@ body{
 .navbar-default .navbar-nav li > a{
 	color: white;
 	font-weight: bold;
+	cursor: pointer;
 }
 .navbar-default .navbar-nav li a:hover{
 	color: white;
@@ -37,6 +45,14 @@ body{
 	font-weight: bold;
 }
 
+
+
+.jumbotron .container-fluid {
+	border-radius: 0px;
+}
+
+
+
 .table tr{
 	background-color: white;
 	font-weight: bold;
@@ -47,5 +63,21 @@ body{
 .table tr:first-child{
 	background-color: #3D9970 !important;
 	color: white;
+	font-weight: bold;
+}
+
+
+
+.modal-default > .modal-dialog
+.modal-content .modal-header {
+	color: white;
+	background-color: #3D9970;
+	border-radius: 5px 5px 0px 0px;
+}
+
+.modal-default > .modal-dialog
+.modal-content .modal-footer a,
+.modal-default > .modal-dialog
+.modal-content .modal-footer button {
 	font-weight: bold;
 }

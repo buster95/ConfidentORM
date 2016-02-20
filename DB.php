@@ -24,6 +24,7 @@ class DB{
 		throw new Exception("Consulta No aceptada", 1);
 	}
 
+
 	/**
 	 * @return mysqli_connect Conexion MySQL
 	 */
