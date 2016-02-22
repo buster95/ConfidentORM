@@ -2,6 +2,8 @@ drop database if exists prueba; ## ELiminar Base de Datos si Existe
 create database prueba; ## Crea Base de Datos
 use prueba; ## Seleccion la Base de Datos
 
+## date.timezone = Europe/Phoenix
+## intl.default_locale = es_NI
 ## Creamos Tabla Usuarios
 create table usuarios (
 	id_usuario int not null primary key auto_increment,

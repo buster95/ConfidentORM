@@ -1,5 +1,7 @@
 <?php
 require_once 'Table.php';
+date_default_timezone_set('Etc/GMT+6');
+// date_default_timezone_get();
 /**
 * GENERADOR DE CONSULTAS PARA MYSQL
 */
@@ -37,6 +39,101 @@ class DB{
 		}
 	}
 
+
+
+
+
+	public static function restore(){
+	}
+
+	public static function backup(){
+		$conexion = new DB();
+		$backup = "------------------------------------------------------------------------\n";
+		$backup .= "--                         CONFIDENT BACKUP                          \n";
+		$backup .= "-- DATABASE: ".strtoupper($conexion->database)."\n";
+		$backup .= "-- HOST: ".$conexion->host."         PORT: ".$conexion->port."\n";
+		$backup .= "-- MYSQL SERVER ".self::query('SELECT VERSION() as version;')->getFirst()->version."\n";
+		$backup .= "-----------------------------------------------------------------------\n\n";
+
+		$backup .= "CREATE DATABASE IF NOT EXISTS `".$conexion->database."` ";
+		$backup .= "/*!40100 DEFAULT CHARACTER SET ".self::query('select @@character_set_database as charset;')->getFirst()->charset."*/;\n";
+		$backup .= "USE `".$conexion->database."`;\n\n";
+
+		$backup .= "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\n";
+		$backup .= "/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n";
+		$backup .= "/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n";
+		$backup .= "/*!40101 SET NAMES utf8 */;\n";
+		$backup .= "/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;\n";
+		$backup .= "/*!40103 SET TIME_ZONE='+00:00' */;\n";
+		$backup .= "/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;\n";
+		$backup .= "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\n";
+		$backup .= "/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n";
+		$backup .= "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n";
+
+		$tablas = $conexion->consultar('SHOW TABLES');
+		while ($tabla = $tablas->fetch_array(MYSQLI_NUM)) {
+			$create = 'DROP TABLE IF EXISTS `'.$tabla[0]."`;\n";
+			$create .= "/*!40101 SET @saved_cs_client = @@character_set_client */;\n";
+			$create .= "/*!40101 SET character_set_client = utf8 */;\n";
+			$object = $conexion->consultar('SHOW CREATE TABLE '.$tabla[0])->fetch_array(MYSQLI_NUM);
+			$create .= $object[1].";\n";
+			$create .= "/*!40101 SET character_set_client = @saved_cs_client */;\n\n";
+			$backup .= $create;
+
+			$backup .= "/*!40000 ALTER TABLE `".$tabla[0]."` DISABLE KEYS */;\n";
+			$query = 'REPLACE INTO `'.$tabla[0].'`';
+			// HACIENDO DUMP DE LOS CAMPOS
+			$atributos = '';
+			$columnas = $conexion->consultar('DESCRIBE '.$tabla[0]);
+			while($columna = $columnas->fetch_array(MYSQLI_ASSOC)){
+				$atributos .= $columna['Field'].',';
+			}
+			$query .= '('.$atributos.") VALUES \n";
+
+			// HACIENDO DUMP DE LOS DATOS
+			$datos = '';
+			$insertados = $conexion->consultar('SELECT * FROM '.$tabla[0]);
+			while($fila = $insertados->fetch_array(MYSQLI_ASSOC)){
+				$datos .= "(";
+				foreach($fila as $key => $value) {
+					$type = self::table($tabla[0])->COLUMN_TYPE($key);
+					if ($type==='STRING' || $type==='DATE') {
+						$datos .= '\''.$value.'\',';
+					}else{
+						$datos .= $value.',';
+					}
+				}
+				$datos .= "),\n";
+			}
+			$query .= $datos.'~';
+
+			// SI NO HAY DATOS, NO SE AÑADE EL INSERT
+			if($conexion->count_rows($insertados)>0){
+				$query = str_replace(',)', ')', $query);
+				$query = str_replace('(,', '(', $query);
+				$query = str_replace("),\n~", ");", $query);
+				$backup .= $query."\n";
+			}
+			$backup .= "/*!40000 ALTER TABLE `".$tabla[0]."` ENABLE KEYS */;\n\n";
+		}
+
+		$backup .= "/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;\n";
+		$backup .= "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n";
+		$backup .= "/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n";
+		$backup .= "/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;\n";
+		$backup .= "/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;\n";
+		$backup .= "/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;\n";
+		$backup .= "/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;\n";
+		$backup .= "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;\n\n";
+
+		$backup .= "------------------------------------------------------------------------\n";
+		$backup .= "--                    CONFIDENT BACKUP COMPLETADO                       \n";
+		$backup .= "------------------------------------------------------------------------\n";
+
+		file_put_contents(strtoupper($conexion->database).'_BACKUP_'.date('d-M-Y').'.sql', $backup);
+		return $create.$backup;
+	}
+
 	private function getHOST(){
 		if($this->port==''){
 			return $this->host;
@@ -44,6 +141,7 @@ class DB{
 			return $this->host.':'.$this->port;
 		}
 	}
+
 
 	public function consultar($consulta){
 		$conx = $this->conectar();
@@ -60,7 +158,7 @@ class DB{
 	public function jsonrow($fila){
 		foreach ($fila as $key => $valor) {
 			if(is_string($valor)){
-				$acentos = array('é','í','ó','ú','á','ñ');
+				$acentos = array('á','é','í','ó','ú','ñ','Á','É','Í','Ó','Ú','Ñ');
 				foreach ($acentos as $llave => $acento) {
 					if(strpos($valor, $acento)){
 						$fila->$key = utf8_decode($valor);
@@ -83,7 +181,7 @@ class DB{
 		while ($row = $resultados->fetch_array(MYSQLI_ASSOC)){
 			foreach ($row as $key => $valor) {
 				if(is_string($valor)){
-					$acentos = array('é','í','ó','ú','á','ñ');
+					$acentos = array('á','é','í','ó','ú','ñ','Á','É','Í','Ó','Ú','Ñ');
 					foreach ($acentos as $llave => $acento) {
 						if(strpos($valor, $acento)){
 							$row[$key] = utf8_decode($valor);
@@ -115,6 +213,16 @@ class DB{
 		return mysqli_num_rows($resultado);
 	}
 
+
+
+
+
+
+
+
+
+
+
 	public static function cifrar($cadena, $llave){
 		$result = '';
 		for($i=0; $i<strlen($cadena); $i++) {
@@ -138,11 +246,6 @@ class DB{
 		return $result;
 	}
 
-
-
-
-
-
 	/**
 	 * ENCRIPTADO DE TEXTO CON LLAVE
 	 * @param  String $cadena        TEXTO A ENCRIPTAR
@@ -153,7 +256,6 @@ class DB{
 		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
 		return $encrypted;
 	}
-
 
 	// $algorithm = MCRYPT_BLOWFISH;
 	// $key = 'That golden key that opens the palace of eternity.';
