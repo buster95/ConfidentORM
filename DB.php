@@ -1,7 +1,10 @@
 <?php
 require_once 'Table.php';
-date_default_timezone_set('Etc/GMT+6');
+
+define('zona_horaria','+6');
+date_default_timezone_set('Etc/GMT'.zona_horaria);
 // date_default_timezone_get();
+
 /**
 * GENERADOR DE CONSULTAS PARA MYSQL
 */
@@ -9,9 +12,9 @@ class DB{
 	// VARIABLES DE CONFIGURACION
 	private $user='root'; // USUARIO de la BASE DE DATOS
 	private $password=''; // PASSWORD del usuario de la BASE DE DATOS
-	private $database='prueba'; // BASE DE DATOS
-	private $host='127.0.0.1'; // IPv4 o HOST de conexion
-	private $port='3306'; // Puerto DE Conexion DEFAULT:3306
+	private $database='fersys'; // BASE DE DATOS
+	private $host='127.0.0.1'; // IPv4 o HOST DE CONEXION
+	private $port='3306'; // PUERTO DE CONEXION DEFAULT:3306
 
 	public static function table($nombre_tabla) {
 		$tabla = new Table($nombre_tabla);
@@ -26,11 +29,16 @@ class DB{
 		throw new Exception("Consulta No aceptada", 1);
 	}
 
+	public static function call($procedure){
+	}
+
+	public static function view($view){
+	}
 
 	/**
 	 * @return mysqli_connect Conexion MySQL
 	 */
-	public function conectar() {
+	private function conectar() {
 		$con = new mysqli($this->getHOST(), $this->user, $this->password, $this->database);
 		if($con->connect_error){
 			trigger_error('Database connection failed: '.$con->connect_error, E_USER_ERROR);
@@ -39,6 +47,13 @@ class DB{
 		}
 	}
 
+	private function getHOST(){
+		if($this->port==''){
+			return $this->host;
+		}else{
+			return $this->host.':'.$this->port;
+		}
+	}
 
 
 
@@ -75,6 +90,7 @@ class DB{
 			$create = 'DROP TABLE IF EXISTS `'.$tabla[0]."`;\n";
 			$create .= "/*!40101 SET @saved_cs_client = @@character_set_client */;\n";
 			$create .= "/*!40101 SET character_set_client = utf8 */;\n";
+
 			$object = $conexion->consultar('SHOW CREATE TABLE '.$tabla[0])->fetch_array(MYSQLI_NUM);
 			$create .= $object[1].";\n";
 			$create .= "/*!40101 SET character_set_client = @saved_cs_client */;\n\n";
@@ -108,7 +124,7 @@ class DB{
 			$query .= $datos.'~';
 
 			// SI NO HAY DATOS, NO SE AÑADE EL INSERT
-			if($conexion->count_rows($insertados)>0){
+			if(self::count_rows($insertados)>0){
 				$query = str_replace(',)', ')', $query);
 				$query = str_replace('(,', '(', $query);
 				$query = str_replace("),\n~", ");", $query);
@@ -134,27 +150,27 @@ class DB{
 		return $create.$backup;
 	}
 
-	private function getHOST(){
-		if($this->port==''){
-			return $this->host;
-		}else{
-			return $this->host.':'.$this->port;
-		}
-	}
+
 
 
 	public function consultar($consulta){
 		$conx = $this->conectar();
 		$resultado = $conx->query($consulta);
+		$conx->close();
 		return $resultado;
 	}
 
-	public function ejecutar($consultar){
+	public function ejecutar($consulta){
 		$conx = $this->conectar();
 		$conx->query($consulta);
-		return $conx->affected_rows;
+		$affected_rows = $conx->affected_rows;
+		$conx->close();
+		return $affected_rows;
 	}
 
+	/*
+	CONVERTIR UNA FILA A JSON FORMAT
+	 */
 	public function jsonrow($fila){
 		foreach ($fila as $key => $valor) {
 			if(is_string($valor)){
@@ -175,6 +191,9 @@ class DB{
 		}
 	}
 
+	/*
+	CONVERTIR CONJUNTO DE DATOS A JSON FORMAT
+	 */
 	public function jsondata($resultados){
 		$filas = array();
 
@@ -201,6 +220,9 @@ class DB{
 		}
 	}
 
+	/*
+	CONVIERTE LAS FILAS DE MYSQLI EN UN ARREGLO DE OBJETOS
+	 */
 	public function listar($resultados)	{
 		$datos = array();
 		while ($fila = $resultados->fetch_object()) {
@@ -209,16 +231,60 @@ class DB{
 		return $datos;
 	}
 
-	public function count_rows($resultado){
+	/*
+	CUENTA LOS DATOS DE UN CONJUNTO DE OBJETOS
+	 */
+	public static function count_data($objetos){
+		if(is_array($objetos)){
+			$x = 0;
+			foreach ($objetos as $obj) {
+				$x++;
+			}
+			return $x;
+		}else{
+			throw new Exception("Error en count_data $objetos no es array", 5);
+		}
+	}
+
+	/*
+	CUENTA EL NUMERO DE FILAS DE UN   MYSQLI_RESULT
+	 */
+	public static function count_rows($resultado){
 		return mysqli_num_rows($resultado);
 	}
 
 
 
 
+	/*
+	VERIFICA SI UN STRING TIENE UN TAMAÑO ESPECIFICO
+	 */
+	public static function size_string_verify($valor, $size){
+		if(is_string($valor) && is_numeric($size)){
+			if(strlen($valor)>=$size){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			if(!is_string($valor) && is_numeric($size)){
+				throw new Exception("Value no es un string", 4);
+			}else if (is_string($valor) && !is_numeric($size)) {
+				throw new Exception("Size no es un numero", 4);
+			}else{
+				throw new Exception("Parametros Invalidos", 4);
+			}
+		}
+	}
 
-
-
+	/*
+	CAPITALIZE PALABRAS
+	 */
+	public static function capitalize($value) {
+		$letter = substr($value, 0, 1);
+		$word = substr($value, 1);
+		return strtoupper($letter).strtolower($word);
+	}
 
 
 
@@ -246,17 +312,6 @@ class DB{
 		return $result;
 	}
 
-	/**
-	 * ENCRIPTADO DE TEXTO CON LLAVE
-	 * @param  String $cadena        TEXTO A ENCRIPTAR
-	 * @param  String $llave_cifrado LLAVE DE CIFRADO
-	 * @return String                TEXTO CIFRADO
-	 */
-	public function encriptar($cadena, $llave_cifrado){
-		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
-		return $encrypted;
-	}
-
 	// $algorithm = MCRYPT_BLOWFISH;
 	// $key = 'That golden key that opens the palace of eternity.';
 	// $data = 'The chicken escapes at dawn. Send help with Mr. Blue.';
@@ -272,6 +327,16 @@ class DB{
 	// $decoded = mcrypt_decrypt($algorithm, $key, $encrypted_data, $mode, $iv);
 	// echo $decoded . "\n";
 
+	/**
+	 * ENCRIPTADO DE TEXTO CON LLAVE
+	 * @param  String $cadena        TEXTO A ENCRIPTAR
+	 * @param  String $llave_cifrado LLAVE DE CIFRADO
+	 * @return String                TEXTO CIFRADO
+	 */
+	public function encriptar($cadena, $llave_cifrado){
+		$encrypted = mcrypt_ecb( MCRYPT_DES, $llave_cifrado, $cadena, MCRYPT_ENCRYPT );
+		return $encrypted;
+	}
 
 	/**
 	 * DESENCRIPTADO DE DATOS CON LLAVE
@@ -284,5 +349,4 @@ class DB{
 		return $decrypted;
 	}
 }
-
 ?>

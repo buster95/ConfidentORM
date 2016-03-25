@@ -223,7 +223,7 @@ class Table {
 	 * @param  String $string1 Parametro de Entrada
 	 * @return String          Parametro Filtrado
 	 */
-	private function TABLENAME_ADD($string1){
+	private function TABLENAME_ADD_TO_PARAM($string1){
 		$string1 = strtolower($string1);
 		$string1 = $this->tabla.'.'.$string1;
 		$string1 = str_replace('(', '('.$this->tabla.'.', $string1);
@@ -243,13 +243,6 @@ class Table {
 		$string1 = str_replace($this->tabla.'.count(', 'COUNT(', $string1);
 		return $string1;
 	}
-
-
-
-
-
-
-
 
 
 
@@ -275,12 +268,12 @@ class Table {
 
 		if($this->select=='*'){
 			if(is_string($parametro1)){
-				$parametro1 = $this->TABLENAME_ADD($parametro1);
+				$parametro1 = $this->TABLENAME_ADD_TO_PARAM($parametro1);
 				$this->select = $parametro1;
 			}
 		}else{
 			if(is_string($parametro1)){
-				$parametro1 = $this->TABLENAME_ADD($parametro1);
+				$parametro1 = $this->TABLENAME_ADD_TO_PARAM($parametro1);
 				$this->select .= ','.$parametro1;
 			}
 		}
@@ -311,21 +304,17 @@ class Table {
 
 		if ($this->select=='*') {
 			if(is_string($parametro1) && is_string($asname)){
-				$parametro1 = $this->TABLENAME_ADD($parametro1);
+				$parametro1 = $this->TABLENAME_ADD_TO_PARAM($parametro1);
 				$this->select = $parametro1.' AS '.$asname;
 			}
 		}else{
 			if(is_string($parametro1) && is_string($asname)){
-				$parametro1 = $this->TABLENAME_ADD($parametro1);
+				$parametro1 = $this->TABLENAME_ADD_TO_PARAM($parametro1);
 				$this->select .= ','.$parametro1.' AS '.$asname;
 			}
 		}
 		return $this;
 	}
-
-
-
-
 
 
 
@@ -338,30 +327,23 @@ class Table {
 	 * @return String         CADENA LIMPIADA
 	 */
 	private function SQL_CLEAN($cadena)	{
-		if(is_string($cadena)){
-			$caracteres = array('\'','"','=','!',
-				'<','>','¿','?','¡','$','\\','{',
-				'}','[',']','#','&','(',')',
-				'+','-',' ');
-			$filtrada = str_replace($caracteres, '', $cadena);
-			$filtrada = str_replace(array('%','*'), '%', $cadena);
-			return $filtrada;
-		}else{
-			return $cadena;
-		}
+		$caracteres = array('\'','"','=','!',
+			'<','>','¿','?','¡','$','\\','{',
+			'}','[',']','#','&',
+			'+');
+		$filtrada = str_replace($caracteres,'', $cadena);
+		$filtrada = str_replace(array('%','*'), '%', $filtrada);
+		return $filtrada;
+
 	}
 	private function SQL_CLEAN_SPECIAL($cadena)	{
-		if(is_string($cadena)){
-			$caracteres = array('\'','"','=','!',
-				'<','>','¿','?','¡','$','\\','{',
-				'}','[',']','#','&',
-				'+');
-			$filtrada = str_replace($caracteres, '', $cadena);
-			$filtrada = str_replace(array('%','*'), '%', $cadena);
-			return $filtrada;
-		}else{
-			return $cadena;
-		}
+		$caracteres = array('\'','"','=','!',
+			'<','>','¿','?','¡','$','\\','{',
+			'}','[',']','#','&','(',')',
+			'+','-',' ');
+		$filtrada = str_replace($caracteres, '', $cadena);
+		$filtrada = str_replace(array('%','*'), '%', $filtrada);
+		return $filtrada;
 	}
 
 	/**
@@ -379,9 +361,9 @@ class Table {
 		}
 		$this->COLUMN_EXISTS($parametro);
 		if($this->where==''){
-			$this->where = $this->TABLENAME_ADD($parametro);
+			$this->where = $this->TABLENAME_ADD_TO_PARAM($parametro);
 		}else{
-			$this->where .= ' AND '.$this->TABLENAME_ADD($parametro);
+			$this->where .= 'AND '.$this->TABLENAME_ADD_TO_PARAM($parametro);
 		}
 
 		if(is_bool($clean_special)){
@@ -394,7 +376,7 @@ class Table {
 			$valor = $this->SQL_CLEAN($valor);
 		}
 
-		if($operador=='' && !(is_string($valor) && $valor!==0)){
+		if($operador==='' && !(is_string($valor) || $valor===0)){
 			$this->where .= '=';
 		}else{
 			if(is_string($valor) && $valor!==0){
@@ -404,10 +386,17 @@ class Table {
 			}
 		}
 
-		if($this->COLUMN_TYPE($parametro)=='NUMBER' && (is_numeric($valor) || $valor===0)){
+		// if($this->COLUMN_TYPE($parametro)==='NUMBER'){
+		// 	$this->where .= $valor;
+		// }else if($this->COLUMN_TYPE($parametro)==='STRING'){
+		// 	$this->where .= "'".$valor."'";
+		// }
+
+
+		if($this->COLUMN_TYPE($parametro)==='NUMBER' && (is_numeric($valor) || $valor===0)){
 			$this->where .= $valor;
-		}else if($this->COLUMN_TYPE($parametro)=='STRING' && (is_string($valor) && $valor!==0)){
-			$this->where .= "'".$valor."'";
+		}else if($this->COLUMN_TYPE($parametro)==='STRING' && (is_string($valor) && $valor!==0)){
+			$this->where .= "'".$valor."' ";
 		}else{
 			throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
 		}
@@ -429,9 +418,9 @@ class Table {
 		}
 		$this->COLUMN_EXISTS($parametro);
 		if($this->where==''){
-			$this->where = $this->TABLENAME_ADD($parametro);
+			$this->where = $this->TABLENAME_ADD_TO_PARAM($parametro);
 		}else{
-			$this->where .= ' OR '.$this->TABLENAME_ADD($parametro);
+			$this->where .= ' OR '.$this->TABLENAME_ADD_TO_PARAM($parametro);
 		}
 
 		if(is_bool($clean_special)){
@@ -457,18 +446,12 @@ class Table {
 		if($this->COLUMN_TYPE($parametro)=='NUMBER' && (is_numeric($valor) || $valor===0)){
 			$this->where .= $valor;
 		}else if($this->COLUMN_TYPE($parametro)=='STRING' && (is_string($valor) && $valor!==0)){
-			$this->where .= "'".$valor."'";
+			$this->where .= "'".$valor."' ";
 		}else{
 			throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
 		}
 		return $this;
 	}
-
-
-
-
-
-
 
 
 
@@ -482,13 +465,6 @@ class Table {
 	 */
 	public function inner(Table $table, $table_param, $current_param){
 	}
-
-
-
-
-
-
-
 
 
 
@@ -543,11 +519,6 @@ class Table {
 		}
 		return $this;
 	}
-
-
-
-
-
 
 
 
@@ -611,12 +582,6 @@ class Table {
 
 
 
-
-
-
-
-
-
 	/**
 	 * OBTENER LA CONSULTA DE UNA BUSQUEDA POR ID
 	 * @param  Int $id ID_REGISTRO
@@ -666,12 +631,6 @@ class Table {
 
 
 
-
-
-
-
-
-
 	public function getSQL(){
 		$consulta = "SELECT ".$this->select." FROM ".$this->tabla;
 		if($this->inner!=''){
@@ -713,11 +672,32 @@ class Table {
 		return $this->mydb->jsonrow($resultados->fetch_object());
 	}
 
+	public function isExists($sensitive=false){
+		$consulta = "SELECT ".$this->select." FROM ".$this->tabla;
+		if($this->where != ''){
+			$consulta.=" WHERE ".$this->where;
+		}
 
+		if ($sensitive) {
+			//$consulta = str_replace('\' ', '\' COLLATE utf8_bin ', $consulta);
+			$consulta = str_replace('LIKE', 'LIKE BINARY', $consulta);
+		}
 
+		$consulta.=';';
+		$consulta = str_replace(' ;', ';', $consulta);
 
+		// var_dump($consulta);
+		$resultados = $this->mydb->consultar($consulta);
+		// var_dump($resultados);
+		$fila = $resultados->fetch_object();
+		// var_dump($fila);
 
-
+		if($fila!==null){
+			return true;
+		}else{
+			return false;
+		}
+	}
 
 
 
@@ -754,8 +734,6 @@ class Table {
 
 
 
-
-
 	/**
 	 * BUSCA UNA CADENA EN UN ARRAY
 	 * @param  Array $array CONJUNTO DE DATOS
@@ -773,6 +751,20 @@ class Table {
 		return false;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

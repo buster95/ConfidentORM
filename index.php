@@ -2,6 +2,6 @@
 
 require_once 'DB.php';
 
-echo (DB::backup());
+echo DB::query('select * from usuarios')->getJSON();
 
 ?>
