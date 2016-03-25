@@ -1,6 +1,6 @@
 <?php
 
-require_once '../DB.php';
+require_once '/../dist/DB.php';
 
 echo DB::table('usuarios')->getJSON();
 
