@@ -137,7 +137,7 @@ class Table {
 	 * RETORNA SI UNA CADENA ES UN OPERADOR
 	 * @param Boolean $operador TRUE,FALSE
 	 */
-	public function IS_OPERADOR($operador){
+	private function IS_OPERADOR($operador){
 		$operadores = array('=','!=','===','!==','>','<','>=','<=');
 		if($this->search_array($operadores,$operador)){
 			return true;
@@ -317,10 +317,16 @@ class Table {
 	}
 
 
-
-
-
-
+	/**
+	 * LIMPIA UNA CADENA SOLO QUITANDO APOSTROFE
+	 * @param String $cadena CADENA A LIMPIAR
+	 * @return String 		 CADENA LIMPIADA
+	 */
+	private function SQL_CLEAN_TEXT($cadena=''){
+		$caracteres = array('\'');
+		$filtrada = str_replace($caracteres,'', $cadena);
+		return $filtrada;
+	}
 	/**
 	 * QUITA CARACTERES ESPECIALES DE UNA CADENA
 	 * @param  String $cadena CADENA A LIMPIAR
@@ -340,9 +346,8 @@ class Table {
 		$caracteres = array('\'','"','=','!',
 			'<','>','¿','?','¡','$','\\','{',
 			'}','[',']','#','&','(',')',
-			'+','-',' ');
+			'+','-','%','*');
 		$filtrada = str_replace($caracteres, '', $cadena);
-		$filtrada = str_replace(array('%','*'), '%', $filtrada);
 		return $filtrada;
 	}
 
@@ -581,7 +586,6 @@ class Table {
 
 
 
-
 	/**
 	 * OBTENER LA CONSULTA DE UNA BUSQUEDA POR ID
 	 * @param  Int $id ID_REGISTRO
@@ -619,10 +623,9 @@ class Table {
 	public function findJSON($id){
 		$consulta = $this->findSQL($id);
 		$resultado = $this->mydb->consultar($consulta);
-
 		if($this->mydb->count_rows($resultado)>0){
-			$json = $this->mydb->jsonrow($resultado->fetch_object());
-			return $json;
+			$rowToJSON = DB::jsonrow($resultado->fetch_array(MYSQLI_ASSOC));
+			return $rowToJSON;
 		}else{
 			return '{}';
 		}
@@ -653,7 +656,7 @@ class Table {
 
 	public function get(){
 		$resultados = $this->mydb->consultar($this->getSQL());
-		$lista = $this->mydb->listar($resultados);
+		$lista = DB::listar($resultados);
 		return $lista;
 	}
 
@@ -664,12 +667,12 @@ class Table {
 
 	public function getJSON(){
 		$resultados = $this->mydb->consultar($this->getSQL());
-		return $this->mydb->jsondata($resultados);
+		return DB::jsondata($resultados);
 	}
 
 	public function getFirstJSON(){
 		$resultados = $this->mydb->consultar($this->getSQL());
-		return $this->mydb->jsonrow($resultados->fetch_object());
+		return DB::jsonrow($resultados->fetch_array(MYSQLI_ASSOC));
 	}
 
 	public function isExists($sensitive=false){
@@ -706,20 +709,46 @@ class Table {
 		$consulta="INSERT INTO ".strtoupper($this->tabla).'(';
 		$insert = '';
 		$values = ') VALUES (';
+
 		if(is_object($datos) || is_array($datos)){
 			foreach ($datos as $key => $value) {
-				$insert .= $key.',';
-				if(is_numeric($value)){
-					$values .= $value.',';
-				}else if(is_string($value)){
-					$values .= "'".$value."',";
+				if($this->COLUMN_EXISTS(strtoupper($key))){
+					$insert .= $key.',';
+					$value = $this->SQL_CLEAN_TEXT($value);
+
+					switch ($this->COLUMN_TYPE($key)) {
+						case 'STRING':
+							$values .= "'".$value."',";
+							break;
+						case 'DATE':
+							$values .= "'".$value."',";
+							break;
+						case 'NUMBER':
+							$values .= $value.',';
+							break;
+						case 'BOOLEAN':
+							$values .= $value.',';
+							break;
+						default:
+							$values .= "'".$value."',";
+							break;
+					}
+				}else{
+					throw new Exception("NO ES UN NOMBRE => ( ".$parametro1." ) PARA UNA COLUMNA", 3);
 				}
 			}
 		}
-		$consulta .= $insert.$values.')';
+
+		$consulta .= $insert.$values.');';
 		$consulta = str_replace(',)', ')', $consulta);
 		$consulta = str_replace("'CURRENT_DATE()'", 'CURRENT_DATE()', $consulta);
-		return $consulta;
+		$consulta = str_replace("'current_date()'", 'CURRENT_DATE()', $consulta);
+		$resultado = $this->mydb->ejecutar($consulta);
+		if ($resultado>0) {
+			return true;
+		}else{
+			return false;
+		}
 	}
 
 	public function save_update($datos){
@@ -775,7 +804,6 @@ class Table {
 * 	SQL QUERY CONSULTA
 */
 class Query {
-
 	private $consulta;
 	private $db_conexion;
 
@@ -787,7 +815,7 @@ class Query {
 
 	public function get(){
 		$resultados = $this->db_conexion->consultar($this->consulta);
-		$lista = $this->db_conexion->listar($resultados);
+		$lista = DB::listar($resultados);
 		return $lista;
 	}
 
@@ -798,12 +826,12 @@ class Query {
 
 	public function getJSON(){
 		$resultados = $this->db_conexion->consultar($this->consulta);
-		return $this->db_conexion->jsondata($resultados);
+		return DB::jsondata($resultados);
 	}
 
 	public function getFirstJSON(){
 		$resultados = $this->db_conexion->consultar($this->consulta);
-		return $this->db_conexion->jsonrow($resultados->fetch_object());
+		return DB::jsonrow($resultados->fetch_object());
 	}
 }
 ?>

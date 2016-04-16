@@ -58,10 +58,10 @@ class DB{
 
 
 
-	public static function restore(){
+	public function restore(){
 	}
 
-	public static function backup(){
+	public function backup(){
 		$conexion = new DB();
 		$backup = "------------------------------------------------------------------------\n";
 		$backup .= "--                         CONFIDENT BACKUP                          \n";
@@ -169,9 +169,16 @@ class DB{
 	}
 
 	/*
+	HEADER JSON FORMAT PHP
+	 */
+	public static function JSON_CONTENT(){
+		header('Content-Type: application/json');
+	}
+
+	/*
 	CONVERTIR UNA FILA A JSON FORMAT
 	 */
-	public function jsonrow($fila){
+	public static function jsonrow($fila){
 		foreach ($fila as $key => $valor) {
 			if(is_string($valor)){
 				$acentos = array('á','é','í','ó','ú','ñ','Á','É','Í','Ó','Ú','Ñ');
@@ -183,6 +190,7 @@ class DB{
 				}
 			}
 		}
+		$fila = array_map('utf8_encode', $fila);
 		$json = json_encode($fila, JSON_NUMERIC_CHECK);
 		if($json!=false){
 			return $json;
@@ -194,9 +202,8 @@ class DB{
 	/*
 	CONVERTIR CONJUNTO DE DATOS A JSON FORMAT
 	 */
-	public function jsondata($resultados){
+	public static function jsondata($resultados){
 		$filas = array();
-
 		while ($row = $resultados->fetch_array(MYSQLI_ASSOC)){
 			foreach ($row as $key => $valor) {
 				if(is_string($valor)){
@@ -223,7 +230,7 @@ class DB{
 	/*
 	CONVIERTE LAS FILAS DE MYSQLI EN UN ARREGLO DE OBJETOS
 	 */
-	public function listar($resultados)	{
+	public static function listar($resultados)	{
 		$datos = array();
 		while ($fila = $resultados->fetch_object()) {
 			$datos[] = $fila;
@@ -232,7 +239,7 @@ class DB{
 	}
 
 	/*
-	CUENTA LOS DATOS DE UN CONJUNTO DE OBJETOS
+	CUENTA LOS DATOS DE UN ARRAY
 	 */
 	public static function count_data($objetos){
 		if(is_array($objetos)){
@@ -247,7 +254,7 @@ class DB{
 	}
 
 	/*
-	CUENTA EL NUMERO DE FILAS DE UN   MYSQLI_RESULT
+	CUENTA EL NUMERO DE FILAS DE UN  MYSQLI_RESULT
 	 */
 	public static function count_rows($resultado){
 		return mysqli_num_rows($resultado);
@@ -285,9 +292,38 @@ class DB{
 		$word = substr($value, 1);
 		return strtoupper($letter).strtolower($word);
 	}
+	/*
+	CAPITALIZE PALABRAS
+	 */
+	public static function capitalize_texto($cadena) {
+		$textos = explode(' ', $cadena);
+		$textos_procesados='';
+		foreach ($textos as $value) {
+			$textos_procesados .= ' '.self::capitalize($value);
+		}
+		return substr($textos_procesados, 1);
+	}
+	/*
+	CONVERTIR A MAYUSCULAS UNA PALABRA O UN TEXTO
+	 */
+	public static function mayuscula($cadena) {
+		return strtoupper($cadena);
+	}
+	/*
+	CONVERTIR A MINUSCULAS UNA PALABRA O UN TEXTO
+	 */
+	public static function minuscula($cadena) {
+		return strtolower($cadena);
+	}
 
 
 
+
+	public static function tokens()	{
+		$tokens = crypt('tokens aleatorio');
+		$tokens = str_replace(array('$','.','/'), '', $tokens);
+		return $tokens;
+	}
 
 	public static function cifrar($cadena, $llave){
 		$result = '';
