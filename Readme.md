@@ -42,6 +42,8 @@ echo DB::table('usuarios')->getJSON();
 
 * **get()**
 
+* **getFirst()**
+
 * **getJSON()**
 
 * **getFirstJSON()**
