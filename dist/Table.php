@@ -102,7 +102,8 @@ class Table {
         if ($columna == '') {
             throw new Exception("PARAMETRO VACIO", 9);
         }
-        $columnas = $this->mydb->consultar('SHOW COLUMNS FROM ' . $this->tabla . " WHERE Field='" . $columna . "'");
+        $parameter=$this->SELECT_CLEAN_PARAMS($columna);
+        $columnas = $this->mydb->consultar('SHOW COLUMNS FROM ' . $this->tabla . " WHERE Field='" .$parameter. "'");
 
         $number = array('bigint', 'int', 'smallint', 'mediumint', 'real', 'float', 'double', 'decimal');
         $string = array('varchar', 'nvarchar', 'char', 'text', 'tinytext', 'mediumtext', 'longtext');
@@ -129,7 +130,7 @@ class Table {
                 return "BINARY";
             }
         }
-        throw new Exception("COLUMNA => ( " . $tipo . " ) NO EXISTE", 1);
+        throw new Exception("COLUMNA => ( ".$columna." ) NO EXISTE", 1);
     }
 
     /**
@@ -151,7 +152,11 @@ class Table {
      */
     private function SELECT_CLEAN_PARAMS($string1) {
         $verificador = strtolower($string1);
-        $verificador = str_replace(array('concat(', 'sum(', 'avg(', 'count(', 'max(', 'min(', '(', ')', ' '), '', $verificador);
+        $funciones=array('concat(', 'sum(', 'avg(',
+            'count(', 'max(', 'min(',
+            'day(', 'month(', 'year(',
+            'md5(', '(', ')', ' ');
+        $verificador = str_replace($funciones, '', $verificador);
         $verificador = str_replace(array('+', '-', '*', '/'), ',', $verificador);
         return $verificador;
     }
@@ -226,9 +231,9 @@ class Table {
      * @param  String $string1 Parametro de Entrada
      * @return String          Parametro Filtrado
      */
-    private function TABLENAME_ADD_TO_PARAM($string1) {
-        $string1 = strtolower($string1);
-        $string1 = $this->tabla . '.' . $string1;
+    private function TABLENAME_ADD_TO_PARAM($columna) {
+        $string1 = strtolower($columna);
+        $string1 = $this->tabla.'.'.$string1;
         $string1 = str_replace('(', '(' . $this->tabla . '.', $string1);
         $string1 = str_replace(',', ',' . $this->tabla . '.', $string1);
         $string1 = str_replace('+', '+' . $this->tabla . '.', $string1);
@@ -244,6 +249,9 @@ class Table {
         $string1 = str_replace($this->tabla . '.min(', 'MIN(', $string1);
         $string1 = str_replace($this->tabla . '.concat(', 'CONCAT(', $string1);
         $string1 = str_replace($this->tabla . '.count(', 'COUNT(', $string1);
+        $string1 = str_replace($this->tabla . '.year(', 'YEAR(', $string1);
+        $string1 = str_replace($this->tabla . '.month(', 'MONTH(', $string1);
+        $string1 = str_replace($this->tabla . '.day(', 'DAY(', $string1);
         return $string1;
     }
 
@@ -318,6 +326,7 @@ class Table {
         return $this;
     }
 
+
     /**
      * WHERE CLAUSE SQL QUERY
      * @param  String $parametro PARAMETRO_NOMBRE
@@ -348,18 +357,21 @@ class Table {
             $valor = DB::SQL_CLEAN($valor);
         }
 
-        if ($this->COLUMN_TYPE($parametro) === 'NUMBER' && (is_numeric($valor) || $valor === 0)) {
+        $tipo=$this->COLUMN_TYPE($parametro);
+        if($tipo === 'NUMBER' && (is_numeric($valor) || $valor === 0)) {
             if ($operador==='') {
                 $this->where .= '='.$valor;
             }else{
                 $this->where .= $operador.$valor;
             }
-        } else if ($this->COLUMN_TYPE($parametro) === 'STRING' && (is_string($valor) && $valor !== 0)) {
+        }else if ($tipo === 'STRING' && (is_string($valor) && $valor !== 0)) {
             $this->where .= " LIKE '" . $valor . "'";
 
-        }else if($this->COLUMN_TYPE($parametro)==='BOOLEAN'){
+        }else if($tipo==='BOOLEAN'){
             $this->where .= "=".$valor;
 
+        }else if($tipo==='DATE'){
+            $this->where.="=".$valor;
         } else {
             throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
         }
@@ -818,11 +830,11 @@ class Table {
 
 }
 
+
 /**
  * 	SQL QUERY CONSULTA
  */
 class Query {
-
     private $query;
     private $db_conexion;
 
@@ -878,6 +890,46 @@ class Query {
         } else {
             return false;
         }
+    }
+}
+
+
+/**
+ * SQL VIEW CONSULTA
+*/
+class View{
+    private $query;
+    private $db_conexion;
+
+    function __construct($consulta){
+        $this->db_conexion = new DB();
+        $this->query = 'SELECT * FROM '.$consulta;
+        return $this;
+    }
+
+    public function getSQL(){
+        return $this->query;
+    }
+
+    public function get() {
+        $resultados = $this->db_conexion->consultar($this->query);
+        $lista = DB::listar($resultados);
+        return $lista;
+    }
+
+    public function getFirst() {
+        $resultados = $this->db_conexion->consultar($this->query);
+        return $resultados->fetch_object();
+    }
+
+    public function getJSON() {
+        $resultados = $this->db_conexion->consultar($this->query);
+        return DB::jsondata($resultados);
+    }
+
+    public function getFirstJSON() {
+        $resultados = $this->db_conexion->consultar($this->query);
+        return DB::jsonrow($resultados->fetch_array(MYSQLI_ASSOC));
     }
 }
 

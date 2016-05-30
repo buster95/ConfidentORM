@@ -32,11 +32,17 @@ class DB {
     }
 
     public static function call($procedure) {
-
     }
 
-    public static function view($view) {
+    public static function funct($funtName) {
+    }
 
+    public static function view($viewName){
+        if ($viewName != null & $viewName != '') {
+            $vista = new View($viewName);
+            return $vista;
+        }
+        throw new Exception("Consulta No aceptada", 1);
     }
 
     /**
