@@ -5,19 +5,21 @@ ConfidentORM
 php5 o superior
 
 ### CLASES ###
-```php
-DB.php
-Table.php
-```
+`DB.php`
+`Table.php`
 
 ### USO ###
-**Modulo** `ngNotify`
 
-**Servicio** `$notify`
 
 ```php
-DB::table('table_name')->get();
-
+$usuarios = DB::table('table_name')->get();
+foreach($usuarios as $user){
+	echo $user->nombre;
+	echo $user->apellido;
+	echo $user->id;
+	echo $user->usuario;
+	echo $user->password;
+}
 ```
 
 ```javascript
