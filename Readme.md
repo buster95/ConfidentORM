@@ -29,8 +29,12 @@ echo DB::table('usuarios')->getJSON();
 
 **Resultado**
 ```javascript
-DB::JSON_CONTENT();
-echo DB::table('usuarios')->getJSON();
+[
+{"nombre":"perengano","apellido":"lopez",id:1,"perenciano1","password":"123456"},
+{"nombre":"perengano","apellido":"lopez",id:1,"perenciano1","password":"123456"},
+{"nombre":"perengano","apellido":"lopez",id:1,"perenciano1","password":"123456"},
+{"nombre":"perengano","apellido":"lopez",id:1,"perenciano1","password":"123456"}
+]
 ```
 
 ### METODOS ###
