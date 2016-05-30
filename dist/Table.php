@@ -348,22 +348,6 @@ class Table {
             $valor = DB::SQL_CLEAN($valor);
         }
 
-//        if ($operador === '' && !(is_string($valor) || $valor === 0)) {
-//            $this->where .= '=';
-//        } else {
-//            if (is_string($valor) && $valor !== 0) {
-//                $this->where .= ' LIKE ';
-//            } else {
-//                $this->where .= $operador;
-//            }
-//        }
-
-        // if($this->COLUMN_TYPE($parametro)==='NUMBER'){
-        // 	$this->where .= $valor;
-        // }else if($this->COLUMN_TYPE($parametro)==='STRING'){
-        // 	$this->where .= "'".$valor."'";
-        // }
-
         if ($this->COLUMN_TYPE($parametro) === 'NUMBER' && (is_numeric($valor) || $valor === 0)) {
             if ($operador==='') {
                 $this->where .= '='.$valor;
@@ -371,7 +355,11 @@ class Table {
                 $this->where .= $operador.$valor;
             }
         } else if ($this->COLUMN_TYPE($parametro) === 'STRING' && (is_string($valor) && $valor !== 0)) {
-            $this->where .= " LIKE '" . $valor . "' ";
+            $this->where .= " LIKE '" . $valor . "'";
+
+        }else if($this->COLUMN_TYPE($parametro)==='BOOLEAN'){
+            $this->where .= "=".$valor;
+
         } else {
             throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
         }
@@ -408,16 +396,6 @@ class Table {
             $valor = DB::SQL_CLEAN($valor);
         }
 
-//        if ($operador == '' && !(is_string($valor) && $valor !== 0)) {
-//            $this->where .= '=';
-//        } else {
-//            if (is_string($valor) && $valor !== 0) {
-//                $this->where .= ' LIKE ';
-//            } else {
-//                $this->where .= $operador;
-//            }
-//        }
-
         if ($this->COLUMN_TYPE($parametro) === 'NUMBER' && (is_numeric($valor) || $valor === 0)) {
             if ($operador==='') {
                 $this->where .= '='.$valor;
@@ -425,7 +403,9 @@ class Table {
                 $this->where .= $operador.$valor;
             }
         } else if ($this->COLUMN_TYPE($parametro) === 'STRING' && (is_string($valor) && $valor !== 0)) {
-            $this->where .= " LIKE '" . $valor . "' ";
+            $this->where .= " LIKE '" . $valor . "'";
+        }else if($this->COLUMN_TYPE($parametro)==='BOOLEAN'){
+            $this->where .= "=".$valor;
         } else {
             throw new Exception("COLUMNA TIPO DE DATO DIFERENTE AL VALOR", 1);
         }
@@ -678,6 +658,23 @@ class Table {
     }
 
 
+    private function SQL_FUNCTIONS($consulta){
+        $consulta = str_replace("'CURRENT_DATE()'", 'CURRENT_DATE()', $consulta);
+        $consulta = str_replace("'current_date()'", 'CURRENT_DATE()', $consulta);
+        $consulta = str_replace("'CURDATE()'", 'CURRENT_DATE()', $consulta);
+        $consulta = str_replace("'curdate()'", 'CURRENT_DATE()', $consulta);
+
+        $consulta = str_replace("'CURRENT_TIME()'", 'CURRENT_TIME()', $consulta);
+        $consulta = str_replace("'current_time()'", 'CURRENT_TIME()', $consulta);
+        $consulta = str_replace("'CURTIME()'", 'CURRENT_TIME()', $consulta);
+        $consulta = str_replace("'curtime()'", 'CURRENT_TIME()', $consulta);
+
+        $consulta = str_replace("'CURRENT_TIMESTAMP()'", 'CURRENT_TIMESTAMP()', $consulta);
+        $consulta = str_replace("'current_timestamp()'", 'CURRENT_TIMESTAMP()', $consulta);
+        return $consulta;
+    }
+
+
     public function save($datos) {
         $consulta = "INSERT INTO " . strtoupper($this->tabla) . '(';
         $insert = '';
@@ -716,8 +713,8 @@ class Table {
 
         $consulta .= $insert . $values . ');';
         $consulta = str_replace(',)', ')', $consulta);
-        $consulta = str_replace("'CURRENT_DATE()'", 'CURRENT_DATE()', $consulta);
-        $consulta = str_replace("'current_date()'", 'CURRENT_DATE()', $consulta);
+
+        $consulta =  $this->SQL_FUNCTIONS($consulta);
 
         $resultado = $this->mydb->ejecutar($consulta);
 
@@ -745,10 +742,10 @@ class Table {
 
                     switch ($this->COLUMN_TYPE($key)) {
                         case 'STRING':
-                            $update .= "'" . $value."',";
+                            $update .= "'" .$value."',";
                             break;
                         case 'DATE':
-                            $update .= "'" . $value."',";
+                            $update .= "'" .$value."',";
                             break;
                         case 'NUMBER':
                             $update .= $value.',';
@@ -761,11 +758,11 @@ class Table {
                             }
                             break;
                         default:
-                            $update .= "'" . $value."',";
+                            $update .= "'" .$value."',";
                             break;
                     }
                 } else {
-                    throw new Exception("NO ES UN NOMBRE => ( " . $key . " ) PARA UNA COLUMNA", 3);
+                    throw new Exception("NO ES UN NOMBRE => ( " .$key. " ) PARA UNA COLUMNA", 3);
                 }
             }
         }else{
@@ -773,11 +770,12 @@ class Table {
         }
         $consulta .= $update.' WHERE '.$this->KEY().'='.$id;
         $consulta = str_replace(array("', ","''"),"' ", $consulta);
-        $consulta = str_replace("'CURRENT_DATE()'", 'CURRENT_DATE()', $consulta);
-        $consulta = str_replace("'current_date()'", 'CURRENT_DATE()', $consulta);
+
+        $consulta =  $this->SQL_FUNCTIONS($consulta);
+
         $consulta = str_replace(", WHERE", ' WHERE', $consulta);
         $resultado = $this->mydb->ejecutar($consulta);
-        var_dump($consulta);
+
         if ($resultado > 0) {
             return true;
         } else {

@@ -170,9 +170,8 @@ class DB {
     public static function acentos($string){
         $acentos = array('á', 'é', 'í', 'ó', 'ú', 'ñ', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ');
         foreach ($acentos as $llave => $acento) {
-            if (strpos($string, $acento)) {
+            if (strpos($string, $acento)>-1) {
                 $string = utf8_decode($string);
-                echo 'entro <br>';
                 break;
             }
         }
@@ -191,10 +190,11 @@ class DB {
     public static function jsonrow($fila) {
         foreach ($fila as $key => $valor) {
             if (is_string($valor)) {
+                // $fila[$key] = self::acentos($valor);
                 $acentos = array('á', 'é', 'í', 'ó', 'ú', 'ñ', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ');
                 foreach ($acentos as $llave => $acento) {
-                    if (strpos($valor, $acento)) {
-                        $fila->$key = utf8_decode($valor);
+                    if (strpos($valor, $acento)>-1) {
+                        $fila[$key] = utf8_decode($valor);
                         break;
                     }
                 }
@@ -217,9 +217,10 @@ class DB {
         while ($row = $resultados->fetch_array(MYSQLI_ASSOC)) {
             foreach ($row as $key => $valor) {
                 if (is_string($valor)) {
+                    // $row[$key] = self::acentos($valor);
                     $acentos = array('á', 'é', 'í', 'ó', 'ú', 'ñ', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ');
                     foreach ($acentos as $llave => $acento) {
-                        if (strpos($valor, $acento)) {
+                        if (strpos($valor, $acento)>-1) {
                             $row[$key] = utf8_decode($valor);
                             break;
                         }
